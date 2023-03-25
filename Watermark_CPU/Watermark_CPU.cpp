@@ -49,7 +49,7 @@ int main(int argc, char** argv)
 
 		//διάβασμα παραμέτρων p και psnr
 		p = inir.GetInteger("parameters", "p", 5);
-		psnr = inir.GetReal("parameters", "psnr", 30.0f);
+		psnr = static_cast<float>(inir.GetReal("parameters", "psnr", 30.0f));
 
 		//διάβασμα του ονόματος του αρχείου που έχει το W πίνακα
 		w_file = inir.Get("paths", "w_path", "w.txt");
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
 		grayscale_vals = new float[elems];
 		//μετατροπή rgb σε grayscale με τα παραπάνω βάρη
 		for (int i = 0; i < elems; i++) {
-			grayscale_vals[i] = std::round(0.299 * image_vals[i]) + std::round(0.587 * image_vals[i + elems]) + std::round(0.114 * image_vals[i + 2 * elems]);
+			grayscale_vals[i] = static_cast<float>(std::round(0.299 * image_vals[i]) + std::round(0.587 * image_vals[i + elems]) + std::round(0.114 * image_vals[i + 2 * elems]));
 		}
 		//διαβάζουμε τον W πίνακα
 		Eigen::ArrayXXf w = load_W(w_file, rows, cols);

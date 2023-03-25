@@ -15,10 +15,9 @@ using namespace cimg_library;
 using std::cout;
 
 //συνάρτηση που διαβάζει τον W πίνακα και τον επιστρέφει σε Eigen/Array μορφή
-Eigen::ArrayXXf load_W(std::string w_file, int rows, int cols) {
+Eigen::ArrayXXf load_W(std::string w_file, const int rows, const int cols) {
 	float* w_ptr = NULL;
 	int i = 0;
-	float val;
 	std::ifstream w_stream;
 
 	w_stream.open(w_file.c_str(), std::ios::binary);
@@ -63,14 +62,14 @@ Eigen::VectorXf create_neighbors(const Eigen::ArrayXXf& padded_image, const int 
 	}
 	return x_;
 }
-void compute_NVF_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded, Eigen::ArrayXXf& m_nvf, const int p, const int pad, const int rows, const int cols)
+void compute_NVF_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded, Eigen::ArrayXXf& m_nvf, const int p, const int pad, const Eigen::Index rows, Eigen::Index cols)
 {
-	const int elems = rows * cols;
+	const auto elems = rows * cols;
 
 	//padding
 	const int p_squared = static_cast<int>(std::pow(p, 2));
-	const int padded_rows = rows + 2 * pad;
-	const int padded_cols = cols + 2 * pad;
+	const auto padded_rows = rows + 2 * pad;
+	const auto padded_cols = cols + 2 * pad;
 
 	//θα τρέξουν παράλληλα για Ν threads τον υπολογισμό της μάσκας. Κάθε thread αναλαμβάνει τον υπολογισμό
 	//των (rows*cols)/N pixels, έτσι γίνεται επιτάχυνση της διαδικασίας. Οτιδήποτε ορίζεται μέσα στο omp pragma
@@ -92,7 +91,7 @@ void compute_NVF_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padde
 			//εδώ διαβάζονται κατα στήλες οι τιμές της padded
 			for (int ii = 0; ii < p; ii++) {
 				for (int jj = 0; jj < p; jj++) {
-					variance += pow(neighb_d[jj * p + ii] - mean, 2);
+					variance += pow(neighb_d[jj * p + ii] - mean, 2); //double to float warning, ignore!
 				}
 			}
 			variance = variance / (p_squared - 1);
@@ -102,18 +101,18 @@ void compute_NVF_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padde
 	}
 }
 //συνάρτηση που δημιουργεί τη μάσκα NVF και την ενθέτει στην τελική υδατογραφημένη εικόνα
-Eigen::ArrayXXf make_and_add_watermark_NVF(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& w, int p, float psnr, int num_threads)
+Eigen::ArrayXXf make_and_add_watermark_NVF(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& w, const int p, const float psnr, const int num_threads)
 {
 	//για να μην κάνουμε query συνέχεια τις στήλες/γραμμές, τις αποθηκεύουμε
-	const int rows = image.rows();
-	const int cols = image.cols();
-	const int elems = rows * cols;
+	const auto rows = image.rows();
+	const auto cols = image.cols();
+	const auto elems = rows * cols;
 
 	//padding
 	const int p_squared = static_cast<int>(std::pow(p, 2));
 	const int pad = p / 2;
-	const int padded_rows = rows + 2 * pad;
-	const int padded_cols = cols + 2 * pad;
+	const auto padded_rows = rows + 2 * pad;
+	const auto padded_cols = cols + 2 * pad;
 	Eigen::ArrayXXf padded = Eigen::ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
 	Eigen::ArrayXXf m_nvf = Eigen::ArrayXXf::Constant(rows, cols, 0.0f);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = image;
@@ -136,18 +135,18 @@ Eigen::ArrayXXf make_and_add_watermark_NVF(const Eigen::ArrayXXf& image, const E
 }
 
 //συνάρτηση που δημιουργεί τη μάσκα ME και την ενθέτει στη τελική υδατογραφημένη εικόνα
-Eigen::ArrayXXf make_and_add_watermark_ME(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& w, int p, float psnr, int num_threads)
+Eigen::ArrayXXf make_and_add_watermark_ME(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& w, const int p, const float psnr, const int num_threads)
 {
 	//για να μην κάνουμε query συνέχεια τις στήλες/γραμμές, τις αποθηκεύουμε
-	const int rows = image.rows();
-	const int cols = image.cols();
-	const int elems = rows * cols;
+	const auto rows = image.rows();
+	const auto cols = image.cols();
+	const auto elems = rows * cols;
 
 	//padding
 	const int p_squared = static_cast<int>(std::pow(p, 2));
 	const int pad = p / 2;
-	const int padded_rows = rows + 2 * pad;
-	const int padded_cols = cols + 2 * pad;
+	const auto padded_rows = rows + 2 * pad;
+	const auto padded_cols = cols + 2 * pad;
 	Eigen::ArrayXXf padded = Eigen::ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = image;
 
@@ -171,9 +170,9 @@ Eigen::ArrayXXf make_and_add_watermark_ME(const Eigen::ArrayXXf& image, const Ei
 }
 
 //συνάρτηση που υπολογίζει στην Prediction Error Mask
-void compute_ME_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& m_e, Eigen::ArrayXXf& e_x, Eigen::MatrixXf& a_x, int p, int pad, int rows, int cols, int num_threads, bool mask_needed)
+void compute_ME_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& m_e, Eigen::ArrayXXf& e_x, Eigen::MatrixXf& a_x, const int p, const int pad, Eigen::Index rows, Eigen::Index cols, const int num_threads, const bool mask_needed)
 {
-	const int elems = rows * cols;
+	const auto elems = rows * cols;
 	const int p_squared = static_cast<int>(std::pow(p, 2));
 	//αρχικοποίηση πινάκων που χρειάζονται στο ME masking
 	e_x = Eigen::ArrayXXf::Constant(rows, cols, 0.0f);
@@ -241,12 +240,12 @@ void compute_ME_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded
 }
 
 //συνάρτηση που υπολογίζει με έτοιμο φίλτρο (a_x) το e_x
-void compute_error_sequence(const Eigen::ArrayXXf& image, Eigen::MatrixXf& a_x, Eigen::ArrayXXf& e_x, const int rows, const int cols, const int p, const int pad)
+void compute_error_sequence(const Eigen::ArrayXXf& image, Eigen::MatrixXf& a_x, Eigen::ArrayXXf& e_x, const Eigen::Index rows, const Eigen::Index cols, const int p, const int pad)
 {
 	e_x = Eigen::ArrayXXf::Constant(rows, cols, 0.0f);
 	const int p_squared = static_cast<int>(std::pow(p, 2));
-	const int padded_rows = rows + 2 * pad;
-	const int padded_cols = cols + 2 * pad;
+	const auto padded_rows = rows + 2 * pad;
+	const auto padded_cols = cols + 2 * pad;
 	Eigen::ArrayXXf padded = Eigen::ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = image;
 #pragma omp parallel for
@@ -263,18 +262,18 @@ void compute_error_sequence(const Eigen::ArrayXXf& image, Eigen::MatrixXf& a_x, 
 
 }
 //συνάρτηση που υλοποιεί τον watermark detector
-float mask_detector(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& w, int p, float psnr, int num_threads, bool is_nvf)
+float mask_detector(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& w, const int p, const float psnr, const int num_threads, const bool is_nvf)
 {
 	//για να μην κάνουμε query συνέχεια τις στήλες/γραμμές, τις αποθηκεύουμε
-	const int rows = image.rows();
-	const int cols = image.cols();
-	const int elems = rows * cols;
+	const auto rows = image.rows();
+	const auto cols = image.cols();
+	const auto elems = rows * cols;
 
 	//padding
 	const int p_squared = static_cast<int>(std::pow(p, 2));
 	const int pad = p / 2;
-	const int padded_rows = rows + 2 * pad;
-	const int padded_cols = cols + 2 * pad;
+	const auto padded_rows = rows + 2 * pad;
+	const auto padded_cols = cols + 2 * pad;
 
 
 	Eigen::ArrayXXf m, e_z;
