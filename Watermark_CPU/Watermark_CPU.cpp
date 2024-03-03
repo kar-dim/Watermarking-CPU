@@ -17,12 +17,11 @@
 #include <string>
 using namespace cimg_library;
 using std::cout;
-using std::string;
 
 int main(int argc, char** argv)
 {
 	const int LOOPS = 5;
-	int num_threads;
+
 	INIReader inir("settings.ini");
 	if (inir.ParseError() < 0) {
 		cout << "Could not load configuration file, exiting..";
@@ -31,8 +30,8 @@ int main(int argc, char** argv)
 	const char *image_path = strdup(inir.Get("paths", "image", "NO_IMAGE").c_str());
 	const int p = inir.GetInteger("parameters", "p", 5);
 	const float psnr = static_cast<float>(inir.GetReal("parameters", "psnr", 30.0f));
-	const string w_file = inir.Get("paths", "w_path", "w.txt");
-	num_threads = inir.GetInteger("parameters", "threads", 0);
+	const std::string w_file = inir.Get("paths", "w_path", "w.txt");
+	int num_threads = inir.GetInteger("parameters", "threads", 0);
 	if (num_threads <= 0 || num_threads > 256) {
 		auto threads_supported = std::thread::hardware_concurrency();
 		num_threads = threads_supported == 0 ? 2 : threads_supported;
@@ -67,12 +66,14 @@ int main(int argc, char** argv)
 	for (int i = 0; i < elems; i++)
 		grayscale_vals.get()[i] = static_cast<float>(std::round(0.299 * rgb_image.data()[i]) + std::round(0.587 * rgb_image.data()[i + elems]) + std::round(0.114 * rgb_image.data()[i + 2 * elems]));
 
-	Eigen::ArrayXXf image_m = Eigen::Map<Eigen::ArrayXXf>(grayscale_vals.get(), cols, rows).transpose();
-	//image_m.transposeInPlace();
+	Eigen::ArrayXXf image_m = Eigen::Map<Eigen::ArrayXXf>(grayscale_vals.get(), cols, rows);
+	image_m.transposeInPlace();
 
+	//initialize main class responsible for watermarking and detection
 	WatermarkFunctions watermarks(image_m, w_file, p, psnr, num_threads);
 
 	double secs = 0;
+	//NVF mask calculation
 	Eigen::ArrayXXf image_m_nvf, image_m_me;
 	for (int i = 0; i < LOOPS; i++) {
 		timer::start();
@@ -83,9 +84,10 @@ int main(int argc, char** argv)
 	cout << "Time to calculate NVF mask of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / LOOPS << " seconds.\n\n";
 
 	secs = 0;
+	//Prediction error mask calculation
 	for (int i = 0; i < LOOPS; i++) {
 		timer::start();
-		image_m_me = watermarks.make_and_add_watermark_ME();
+		image_m_me = watermarks.make_and_add_watermark_prediction_error();
 		timer::end();
 		secs += timer::secs_passed();
 	}
@@ -93,6 +95,7 @@ int main(int argc, char** argv)
 
 	float correlation_nvf, correlation_me;
 	secs = 0;
+	//NVF mask detection
 	for (int i = 0; i < LOOPS; i++) {
 		timer::start();
 		correlation_nvf = watermarks.mask_detector(image_m_nvf, true);
@@ -102,6 +105,7 @@ int main(int argc, char** argv)
 	cout << "Time to calculate NVF [COR] of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / LOOPS << " seconds.\n\n";
 
 	secs = 0;
+	//Prediction error mask detection
 	for (int i = 0; i < LOOPS; i++) {
 		timer::start();
 		correlation_me = watermarks.mask_detector(image_m_me, false);
@@ -111,6 +115,5 @@ int main(int argc, char** argv)
 	cout << "Time to calculate ME [COR] of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / LOOPS << " seconds.\n\n";
 	cout << "Correlation [NVF]: " << std::fixed << std::setprecision(16) << correlation_nvf << "\n";
 	cout << "Correlation [ME]: " << std::fixed << std::setprecision(16) << correlation_me << "\n";
-
 	return 0;
 }
