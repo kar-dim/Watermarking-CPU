@@ -1,5 +1,4 @@
 ﻿#include "WatermarkFunctions.h"
-#include "UtilityFunctions.h"
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -48,15 +47,15 @@ Eigen::ArrayXXf WatermarkFunctions::load_W(std::string w_file, const Eigen::Inde
 Eigen::VectorXf WatermarkFunctions::create_neighbors(const Eigen::ArrayXXf& padded_image, const int i, const int j, const int p, const int p_squared)
 {
 	const int middle = static_cast<int>(floor(p_squared / 2));
+	const int neighbor_size = (p - 1) / 2;
 	Eigen::ArrayXXf x_temp(p, p);
 	//x_: will contain all the neighbors minus the current pixel value
 	Eigen::VectorXf x_(p_squared - 1);
-	int i0, i1, j0, j1;
 	const float* x_temp_ptr = x_temp.data();
-	i0 = i - (p - 1) / 2;
-	j0 = j - (p - 1) / 2;
-	i1 = i + (p - 1) / 2;
-	j1 = j + (p - 1) / 2;
+	const int i0 = i - neighbor_size;
+	const int j0 = j - neighbor_size;
+	const int i1 = i + neighbor_size;
+	const int j1 = j + neighbor_size;
 	x_temp = padded_image.block(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
 	//ignore the central pixel value
 	int k = 0;
