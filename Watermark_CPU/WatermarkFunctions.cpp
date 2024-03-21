@@ -10,29 +10,19 @@
 
 using std::cout;
 
-WatermarkFunctions::WatermarkFunctions(const Eigen::ArrayXXf& image, std::string w_file_path, const int p, const float psnr, const int num_threads) {
-	this->image = image;
-	this->p = p;
-	this->pad = p / 2;
-	this->rows = image.rows();
-	this->cols = image.cols();
-	this->padded_rows = rows + 2 * pad;
-	this->padded_cols = cols + 2 * pad;
-	this->elems = rows * cols;
-	this->w = load_W(w_file_path, rows, cols);
-	this->p_squared = static_cast<int>(std::pow(p, 2));
-	this->psnr = psnr;
-	this->num_threads = num_threads;
+//constructor to initialize all the necessary data
+WatermarkFunctions::WatermarkFunctions(const Eigen::ArrayXXf& image, const std::string w_file_path, const int p, const float psnr, const int num_threads) 
+	:image(image), p(p), pad(pad), rows(image.rows()), cols(image.cols()), padded_rows(rows + 2 * pad), padded_cols(cols + 2 * pad), elems(rows* cols),
+	w(load_W(w_file_path, image.rows(), image.cols())), p_squared(static_cast<int>(std::pow(p, 2))), p_squared_minus_one_div_2((p_squared - 1) / 2), psnr(psnr), num_threads(num_threads)  {
 }
-//συνάρτηση που διαβάζει τον W πίνακα και τον επιστρέφει σε Eigen/Array μορφή
-Eigen::ArrayXXf WatermarkFunctions::load_W(std::string w_file, const Eigen::Index rows, const Eigen::Index cols) {
+
+//helper method to load the random noise matrix W from the file specified.
+Eigen::ArrayXXf WatermarkFunctions::load_W(const std::string w_file, const Eigen::Index rows, const Eigen::Index cols) {
 	int i = 0;
 	std::ifstream w_stream;
-
 	w_stream.open(w_file.c_str(), std::ios::binary);
 	if (!w_stream.is_open()) {
 		std::string error_str("Error opening '" + w_file + "' file for Random noise W array");
-		cout << error_str;
 		throw std::exception(error_str.c_str());
 	}
 	auto w_ptr = std::unique_ptr<float>(new float[rows * cols]);
@@ -46,25 +36,17 @@ Eigen::ArrayXXf WatermarkFunctions::load_W(std::string w_file, const Eigen::Inde
 //generate p x p neighbors
 Eigen::VectorXf WatermarkFunctions::create_neighbors(const Eigen::ArrayXXf& padded_image, const int i, const int j, const int p, const int p_squared)
 {
-	const int middle = static_cast<int>(floor(p_squared / 2));
 	const int neighbor_size = (p - 1) / 2;
-	Eigen::ArrayXXf x_temp(p, p);
 	//x_: will contain all the neighbors minus the current pixel value
 	Eigen::VectorXf x_(p_squared - 1);
-	const float* x_temp_ptr = x_temp.data();
 	const int i0 = i - neighbor_size;
 	const int j0 = j - neighbor_size;
 	const int i1 = i + neighbor_size;
 	const int j1 = j + neighbor_size;
-	x_temp = padded_image.block(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
+	const Eigen::ArrayXXf x_temp = padded_image.block(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
 	//ignore the central pixel value
-	int k = 0;
-	for (int i = 0; i < x_temp.size(); i++) {
-		if (i != middle) {
-			x_(k) = x_temp_ptr[i];
-			k++;
-		}
-	}
+	std::memcpy(x_.data(), x_temp.data(), sizeof(float) * p_squared_minus_one_div_2);
+	std::memcpy(x_.data() + 4, x_temp.data() + 5, sizeof(float) * p_squared_minus_one_div_2);
 	return x_;
 }
 void WatermarkFunctions::compute_NVF_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded, Eigen::ArrayXXf& m_nvf)
@@ -74,23 +56,21 @@ void WatermarkFunctions::compute_NVF_mask(const Eigen::ArrayXXf& image, const Ei
 #pragma omp parallel for
 	for (int i = pad; i < rows + pad; i++) {
 		Eigen::ArrayXXf neighb = Eigen::ArrayXXf::Constant(p, p, 0.0f);
+		float variance;
 		for (int j = pad; j < cols + pad; j++) {
-			float mean = 0.0f, variance = 0.0f;
+			variance = 0.0f;
 			const float* neighb_d = neighb.data();
 			const int i0 = i - neighbor_size;
 			const int j0 = j - neighbor_size;
 			const int i1 = i + neighbor_size;
 			const int j1 = j + neighbor_size;
 			neighb = padded.block(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
-			mean = neighb.mean();
-			for (int ii = 0; ii < p; ii++) {
-				for (int jj = 0; jj < p; jj++) {
+			const float mean = neighb.mean();
+			for (int ii = 0; ii < p; ii++)
+				for (int jj = 0; jj < p; jj++)
 					variance += powf(neighb_d[jj * p + ii] - mean, 2);
-				}
-			}
 			variance = variance / (p_squared - 1);
 			m_nvf(i - pad, j - pad) = 1.0f - (1.0f / (1.0f + variance));
-			variance = 0.0f;
 		}
 	}
 }
@@ -141,7 +121,7 @@ void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& im
 	for (int i = pad; i < rows + pad; i++) {
 		Eigen::VectorXf x_;
 		for (int j = pad; j < cols + pad; j++) {
-			//calculate p^-1 γειτονιά
+			//calculate p^-1 neighbors
 			x_ = create_neighbors(padded_image, i, j, p, p_squared);
 			//calculate Rx and rx
 			Rx_all[omp_get_thread_num()].noalias() += (x_ * x_.transpose().eval());
@@ -176,7 +156,6 @@ void WatermarkFunctions::compute_error_sequence(const Eigen::ArrayXXf& image, co
 			error_sequence(i, j) = image(i, j) - (coefficients * x_)(0);
 		}
 	}
-
 }
 //main mask detector for Me and NVF masks
 float WatermarkFunctions::mask_detector(const Eigen::ArrayXXf& watermarked_image, const bool is_custom_mask)

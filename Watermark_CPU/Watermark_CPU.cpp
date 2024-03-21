@@ -67,7 +67,6 @@ int main(int argc, char** argv)
 		return -1;
 	}
 	cout << "Image size is: " << rows << " rows and " << cols << " columns\n\n";
-
 	auto grayscale_vals = std::unique_ptr<float>(new float[elems]);
 	for (int i = 0; i < elems; i++)
 		grayscale_vals.get()[i] = static_cast<float>(std::round(0.299 * rgb_image.data()[i]) + std::round(0.587 * rgb_image.data()[i + elems]) + std::round(0.114 * rgb_image.data()[i + 2 * elems]));
@@ -75,51 +74,59 @@ int main(int argc, char** argv)
 	Eigen::ArrayXXf image_m = Eigen::Map<Eigen::ArrayXXf>(grayscale_vals.get(), cols, rows);
 	image_m.transposeInPlace();
 
-	//initialize main class responsible for watermarking and detection
-	WatermarkFunctions watermarks(image_m, w_file, p, psnr, num_threads);
+	//tests begin
+	try {
+		//initialize main class responsible for watermarking and detection
+		WatermarkFunctions watermarkFunctions(image_m, w_file, p, psnr, num_threads);
 
-	double secs = 0;
-	//NVF mask calculation
-	Eigen::ArrayXXf image_m_nvf, image_m_me;
-	for (int i = 0; i < LOOPS; i++) {
-		timer::start();
-		image_m_nvf = watermarks.make_and_add_watermark_NVF();
-		timer::end();
-		secs += timer::secs_passed();
-	}
-	cout << "Time to calculate NVF mask of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / LOOPS << " seconds.\n\n";
+		double secs = 0;
+		//NVF mask calculation
+		Eigen::ArrayXXf image_m_nvf, image_m_me;
+		for (int i = 0; i < LOOPS; i++) {
+			timer::start();
+			image_m_nvf = watermarkFunctions.make_and_add_watermark_NVF();
+			timer::end();
+			secs += timer::secs_passed();
+		}
+		cout << "Time to calculate NVF mask of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / LOOPS << " seconds.\n\n";
 
-	secs = 0;
-	//Prediction error mask calculation
-	for (int i = 0; i < LOOPS; i++) {
-		timer::start();
-		image_m_me = watermarks.make_and_add_watermark_prediction_error();
-		timer::end();
-		secs += timer::secs_passed();
-	}
-	cout << "Time to calculate ME mask of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / LOOPS << " seconds.\n\n";
+		secs = 0;
+		//Prediction error mask calculation
+		for (int i = 0; i < LOOPS; i++) {
+			timer::start();
+			image_m_me = watermarkFunctions.make_and_add_watermark_prediction_error();
+			timer::end();
+			secs += timer::secs_passed();
+		}
+		cout << "Time to calculate ME mask of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / LOOPS << " seconds.\n\n";
 
-	float correlation_nvf, correlation_me;
-	secs = 0;
-	//NVF mask detection
-	for (int i = 0; i < LOOPS; i++) {
-		timer::start();
-		correlation_nvf = watermarks.mask_detector(image_m_nvf, true);
-		timer::end();
-		secs += timer::secs_passed();
-	}
-	cout << "Time to calculate NVF [COR] of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / LOOPS << " seconds.\n\n";
+		float correlation_nvf, correlation_me;
+		secs = 0;
+		//NVF mask detection
+		for (int i = 0; i < LOOPS; i++) {
+			timer::start();
+			correlation_nvf = watermarkFunctions.mask_detector(image_m_nvf, true);
+			timer::end();
+			secs += timer::secs_passed();
+		}
+		cout << "Time to calculate NVF [COR] of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / LOOPS << " seconds.\n\n";
 
-	secs = 0;
-	//Prediction error mask detection
-	for (int i = 0; i < LOOPS; i++) {
-		timer::start();
-		correlation_me = watermarks.mask_detector(image_m_me, false);
-		timer::end();
-		secs += timer::secs_passed();
+		secs = 0;
+		//Prediction error mask detection
+		for (int i = 0; i < LOOPS; i++) {
+			timer::start();
+			correlation_me = watermarkFunctions.mask_detector(image_m_me, false);
+			timer::end();
+			secs += timer::secs_passed();
+		}
+		cout << "Time to calculate ME [COR] of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / LOOPS << " seconds.\n\n";
+
+		cout << "Correlation [NVF]: " << std::fixed << std::setprecision(16) << correlation_nvf << "\n";
+		cout << "Correlation [ME]: " << std::fixed << std::setprecision(16) << correlation_me << "\n";
 	}
-	cout << "Time to calculate ME [COR] of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / LOOPS << " seconds.\n\n";
-	cout << "Correlation [NVF]: " << std::fixed << std::setprecision(16) << correlation_nvf << "\n";
-	cout << "Correlation [ME]: " << std::fixed << std::setprecision(16) << correlation_me << "\n";
+	catch (const std::exception& e) {
+		cout << e.what() << "\n";
+	}
+
 	return 0;
 }
