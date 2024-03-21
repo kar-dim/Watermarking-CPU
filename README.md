@@ -1,10 +1,13 @@
-# icsd-thesis
-Ο κώδικας της Διπλωματικής Εργασίας μου στο Τμήμα Μηχανικών Πληροφοριακών και Επικοινωνιακών Συστημάτων (Πανεπιστήμιο Αιγαίου, Πολυτεχνική Σχολή) με τίτλο "Αποδοτική υλοποίηση αλγορίθμων υδατογράφησης και ανίχνευσης υδατογραφήματος σε εικόνα και βίντεο με χρήση της μονάδας επεξεργασίας γραφικών".
-Η Διπλωματική Εργασία έχει ως στόχο τη σύγκριση των παραπάνω αλγορίθμων (κυρίως στο θέμα της ταχύτητας εκτέλεσης) όταν υλοποιούνται σε GPU και σε CPU.
+# ICSD thesis Part 1 / CPU Watermarking
 
-Part 1 / Χρήση CPU για υπολογισμούς. (Part 2 / Χρήση GPU [εδώ](https://github.com/kar-dim/diploma-thesis_GPU) )
+Code for my Diploma thesis at Information and Communication Systems Engineering (University of the Aegean, School of Engineering) with title "Efficient implementation of watermark and watermark detection algorithms for image and video using the graphics processing unit".
+This Diploma thesis aims to compare the above algorithms (mainly in execution speed) when they are implemented in GPU and CPU.
+Part 1 / CPU usage for calculations. (Part 2 / GPU usage [here](https://github.com/kar-dim/diploma-thesis_GPU) )
 
-Χρησιμοποιήθηκαν οι παρακάτω βιβλιοθήκες:
-- Eigen
-- CImg
-- LibPNG + zlib
+Libraries used:
+- [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page)
+- [CImg](https://cimg.eu/)
+- [inih](https://github.com/jtilly/inih)
+
+For building the project, the below must be installed:
+- LibPNG (can be installed from Visual Studio marketplace).
