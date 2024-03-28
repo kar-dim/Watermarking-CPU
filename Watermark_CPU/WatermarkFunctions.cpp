@@ -18,19 +18,21 @@ WatermarkFunctions::WatermarkFunctions(const Eigen::ArrayXXf& image, const std::
 
 //helper method to load the random noise matrix W from the file specified.
 Eigen::ArrayXXf WatermarkFunctions::load_W(const std::string w_file, const Eigen::Index rows, const Eigen::Index cols) {
-	int i = 0;
-	std::ifstream w_stream;
-	w_stream.open(w_file.c_str(), std::ios::binary);
+	std::ifstream w_stream(w_file.c_str(), std::ios::binary);
 	if (!w_stream.is_open()) {
 		std::string error_str("Error opening '" + w_file + "' file for Random noise W array");
 		throw std::exception(error_str.c_str());
 	}
-	auto w_ptr = std::unique_ptr<float>(new float[rows * cols]);
-	while (!w_stream.eof())
-		w_stream.read(reinterpret_cast<char*>(&w_ptr.get()[i++]), sizeof(float));
-	Eigen::ArrayXXf w = Eigen::Map<Eigen::ArrayXXf>(w_ptr.get(), cols, rows);
-	w.transposeInPlace();
-	return w;
+	w_stream.seekg(0, std::ios::end);
+	const auto total_bytes = w_stream.tellg();
+	w_stream.seekg(0, std::ios::beg);
+	if (rows * cols * sizeof(float) != total_bytes) {
+		std::string error_str("Error: W file total elements != image dimensions! W file total elements: " + std::to_string(total_bytes / (sizeof(float))) + std::string(", Image width: ") + std::to_string(cols) + std::string(", Image height: ") + std::to_string(rows));
+		throw std::exception(error_str.c_str());
+	}
+	std::unique_ptr<float> w_ptr(new float[rows * cols]);
+	w_stream.read(reinterpret_cast<char*>(&w_ptr.get()[0]), total_bytes);
+	return Eigen::Map<Eigen::ArrayXXf>(w_ptr.get(), cols, rows).transpose().eval();
 }
 
 //generate p x p neighbors
