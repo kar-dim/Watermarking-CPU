@@ -12,7 +12,7 @@ using std::cout;
 
 //constructor to initialize all the necessary data
 WatermarkFunctions::WatermarkFunctions(const Eigen::ArrayXXf& image, const std::string w_file_path, const int p, const float psnr, const int num_threads) 
-	:image(image), p(p), pad(pad), rows(image.rows()), cols(image.cols()), padded_rows(rows + 2 * pad), padded_cols(cols + 2 * pad), elems(rows* cols),
+	:image(image), p(p), pad(p/2), rows(image.rows()), cols(image.cols()), padded_rows(rows + 2 * pad), padded_cols(cols + 2 * pad), elems(rows* cols),
 	w(load_W(w_file_path, image.rows(), image.cols())), p_squared(static_cast<int>(std::pow(p, 2))), p_squared_minus_one_div_2((p_squared - 1) / 2), psnr(psnr), num_threads(num_threads)  {
 }
 
@@ -57,31 +57,23 @@ void WatermarkFunctions::compute_NVF_mask(const Eigen::ArrayXXf& image, const Ei
 	const int neighbor_size = (p - 1) / 2;
 #pragma omp parallel for
 	for (int i = pad; i < rows + pad; i++) {
-		Eigen::ArrayXXf neighb = Eigen::ArrayXXf::Constant(p, p, 0.0f);
-		float variance;
 		for (int j = pad; j < cols + pad; j++) {
-			variance = 0.0f;
-			const float* neighb_d = neighb.data();
-			const int i0 = i - neighbor_size;
-			const int j0 = j - neighbor_size;
-			const int i1 = i + neighbor_size;
-			const int j1 = j + neighbor_size;
-			neighb = padded.block(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
-			const float mean = neighb.mean();
-			for (int ii = 0; ii < p; ii++)
-				for (int jj = 0; jj < p; jj++)
-					variance += powf(neighb_d[jj * p + ii] - mean, 2);
-			variance = variance / (p_squared - 1);
+			const int start_row = i - neighbor_size;
+			const int end_row = i + neighbor_size;
+			const int start_col = j - neighbor_size;
+			const int end_col = j + neighbor_size;
+			const auto neighb = padded.block(start_row, start_col, end_row - start_row + 1, end_col - start_col + 1);
+			const float variance = (neighb - neighb.mean()).square().sum() / (p_squared - 1);
 			m_nvf(i - pad, j - pad) = 1.0f - (1.0f / (1.0f + variance));
 		}
 	}
 }
 
-Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark(bool is_custom_mask) {
+Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark(MASK_TYPE mask_type) {
 	Eigen::ArrayXXf padded = Eigen::ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = image;
 	Eigen::ArrayXXf m, u;
-	if (is_custom_mask) {
+	if (mask_type == MASK_TYPE::NVF) {
 		compute_NVF_mask(image, padded, m);
 	}
 	else {
@@ -98,13 +90,13 @@ Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark(bool is_custom_mask) 
 //create NVF mask and return the watermarked image
 Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark_NVF()
 {
-	return make_and_add_watermark(true);
+	return make_and_add_watermark(MASK_TYPE::NVF);
 }
 
 //create ME mask and return the watermarked image
 Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark_prediction_error()
 {
-	return make_and_add_watermark(false);
+	return make_and_add_watermark(MASK_TYPE::ME);
 }
 
 //compute Prediction error mask
@@ -160,17 +152,17 @@ void WatermarkFunctions::compute_error_sequence(const Eigen::ArrayXXf& image, co
 	}
 }
 //main mask detector for Me and NVF masks
-float WatermarkFunctions::mask_detector(const Eigen::ArrayXXf& watermarked_image, const bool is_custom_mask)
+float WatermarkFunctions::mask_detector(const Eigen::ArrayXXf& watermarked_image, MASK_TYPE mask_type)
 {
 	Eigen::MatrixXf a_z;
 	Eigen::ArrayXXf m, e_z, padded = Eigen::ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = watermarked_image;
-	if (is_custom_mask) {
-		compute_prediction_error_mask(watermarked_image, padded, m, e_z, a_z, false); //no need for Me mask
+	if (mask_type == MASK_TYPE::NVF) {
+		compute_prediction_error_mask(watermarked_image, padded, m, e_z, a_z, MASK_CALCULATION_REQUIRED_NO);
 		compute_NVF_mask(watermarked_image, padded, m);
 	}
 	else {
-		compute_prediction_error_mask(watermarked_image, padded, m, e_z, a_z, true);
+		compute_prediction_error_mask(watermarked_image, padded, m, e_z, a_z, MASK_CALCULATION_REQUIRED_YES);
 	}
 
 	Eigen::ArrayXXf u = m * w;
