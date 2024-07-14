@@ -78,7 +78,7 @@ Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark(MASK_TYPE mask_type) 
 	}
 	else {
 		Eigen::ArrayXXf error_sequence;
-		Eigen::MatrixXf coefficients;
+		Eigen::VectorXf coefficients;
 		compute_prediction_error_mask(image, padded, m, error_sequence, coefficients, MASK_CALCULATION_REQUIRED_YES);
 	}
 	u = m * w;
@@ -100,7 +100,7 @@ Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark_prediction_error()
 }
 
 //compute Prediction error mask
-void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& m_e, Eigen::ArrayXXf& error_sequence, Eigen::MatrixXf& coefficients, const bool mask_needed)
+void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& m_e, Eigen::ArrayXXf& error_sequence, Eigen::VectorXf& coefficients, const bool mask_needed)
 {
 	m_e = Eigen::ArrayXXf::Constant(rows, cols, 0.0f);
 	Eigen::MatrixXf Rx = Eigen::ArrayXXf::Constant(p_squared - 1, p_squared - 1, 0.0f);
@@ -114,12 +114,16 @@ void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& im
 #pragma omp parallel for
 	for (int i = pad; i < rows + pad; i++) {
 		Eigen::VectorXf x_;
+		Eigen::MatrixXf Rx_pixel;
+		Eigen::VectorXf rx_pixel;
 		for (int j = pad; j < cols + pad; j++) {
 			//calculate p^-1 neighbors
 			x_ = create_neighbors(padded_image, i, j, p, p_squared);
 			//calculate Rx and rx
-			Rx_all[omp_get_thread_num()] += x_ * x_.transpose();
-			rx_all[omp_get_thread_num()] += (x_ * image(i - pad, j - pad));
+			Rx_pixel.noalias() = x_ * x_.transpose();
+			rx_pixel.noalias() = x_ * image(i - pad, j - pad);
+			Rx_all[omp_get_thread_num()].noalias() += Rx_pixel;
+			rx_all[omp_get_thread_num()].noalias() += rx_pixel;
 		}
 	}
 	//reduction sums of Rx,rx of each thread
@@ -128,8 +132,6 @@ void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& im
 		rx += rx_all[i];
 	}
 	coefficients = Rx.fullPivLu().solve(rx);
-	coefficients.transposeInPlace();
-
 	//calculate ex(i,j)
 	compute_error_sequence(padded_image, coefficients, error_sequence);
 	if (mask_needed) {
@@ -139,22 +141,24 @@ void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& im
 }
 
 //computes the prediction error sequence 
-void WatermarkFunctions::compute_error_sequence(const Eigen::ArrayXXf& padded, Eigen::MatrixXf& coefficients, Eigen::ArrayXXf& error_sequence)
+void WatermarkFunctions::compute_error_sequence(const Eigen::ArrayXXf& padded, const Eigen::VectorXf& coefficients, Eigen::ArrayXXf& error_sequence)
 {
 	error_sequence = Eigen::ArrayXXf::Constant(rows, cols, 0.0f);
 #pragma omp parallel for
 	for (int i = 0; i < rows; i++) {
 		Eigen::VectorXf x_;
+		const int padded_i = i + pad;
 		for (int j = 0; j < cols; j++) {
-			x_ = create_neighbors(padded, i + pad, j + pad, p, p_squared);
-			error_sequence(i, j) = padded(i + pad, j + pad) - (coefficients * x_)(0);
+			const int padded_j = j + pad;
+			x_ = create_neighbors(padded, padded_i, padded_j, p, p_squared);
+			error_sequence(i, j) = padded(padded_i, padded_j) - x_.dot(coefficients);
 		}
 	}
 }
 //main mask detector for Me and NVF masks
 float WatermarkFunctions::mask_detector(const Eigen::ArrayXXf& watermarked_image, MASK_TYPE mask_type)
 {
-	Eigen::MatrixXf a_z;
+	Eigen::VectorXf a_z;
 	Eigen::ArrayXXf m, e_z, padded = Eigen::ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = watermarked_image;
 	if (mask_type == MASK_TYPE::NVF) {

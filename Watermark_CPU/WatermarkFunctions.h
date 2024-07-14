@@ -27,6 +27,6 @@ private:
 	Eigen::ArrayXXf load_W(const std::string w_file, const Eigen::Index rows, const Eigen::Index cols);
 	Eigen::ArrayXXf make_and_add_watermark(MASK_TYPE type);
 	void compute_NVF_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded, Eigen::ArrayXXf& m_nvf);
-	void compute_prediction_error_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& m, Eigen::ArrayXXf& error_sequence, Eigen::MatrixXf& coefficients, const bool mask_needed);
-	void compute_error_sequence(const Eigen::ArrayXXf& padded, Eigen::MatrixXf& coefficients, Eigen::ArrayXXf& error_sequence);
+	void compute_prediction_error_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& m, Eigen::ArrayXXf& error_sequence, Eigen::VectorXf& coefficients, const bool mask_needed);
+	void compute_error_sequence(const Eigen::ArrayXXf& padded, const Eigen::VectorXf& coefficients, Eigen::ArrayXXf& error_sequence);
 };
