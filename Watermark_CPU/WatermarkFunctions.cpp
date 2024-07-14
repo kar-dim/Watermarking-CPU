@@ -41,14 +41,14 @@ Eigen::VectorXf WatermarkFunctions::create_neighbors(const Eigen::ArrayXXf& padd
 	const int neighbor_size = (p - 1) / 2;
 	//x_: will contain all the neighbors minus the current pixel value
 	Eigen::VectorXf x_(p_squared - 1);
-	const int i0 = i - neighbor_size;
-	const int j0 = j - neighbor_size;
-	const int i1 = i + neighbor_size;
-	const int j1 = j + neighbor_size;
-	const Eigen::ArrayXXf x_temp = padded_image.block(i0, j0, i1 - i0 + 1, j1 - j0 + 1);
+	const int start_row = i - neighbor_size;
+	const int start_col = j - neighbor_size;
+	const int end_row = i + neighbor_size;
+	const int end_col = j + neighbor_size;
+	const auto x_temp = padded_image.block(start_row, start_col, end_row - start_row + 1, end_col - start_col + 1).reshaped().eval();
 	//ignore the central pixel value
 	std::memcpy(x_.data(), x_temp.data(), sizeof(float) * p_squared_minus_one_div_2);
-	std::memcpy(x_.data() + 4, x_temp.data() + 5, sizeof(float) * p_squared_minus_one_div_2);
+	std::memcpy(x_.data() + p_squared_minus_one_div_2, x_temp.data() + p_squared_minus_one_div_2 + 1, sizeof(float) * p_squared_minus_one_div_2);
 	return x_;
 }
 void WatermarkFunctions::compute_NVF_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded, Eigen::ArrayXXf& m_nvf)
