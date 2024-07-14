@@ -23,7 +23,7 @@ private:
 	const float psnr;
 	const Eigen::Index rows, cols, elems, padded_cols, padded_rows;
 
-	Eigen::VectorXf create_neighbors(const Eigen::ArrayXXf& padded_image, const int i, const int j, const int p, const int p_squared);
+	void create_neighbors(const Eigen::ArrayXXf& padded_image, Eigen::VectorXf& x_, const int i, const int j, const int p, const int p_squared);
 	Eigen::ArrayXXf load_W(const std::string w_file, const Eigen::Index rows, const Eigen::Index cols);
 	Eigen::ArrayXXf make_and_add_watermark(MASK_TYPE type);
 	void compute_NVF_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded, Eigen::ArrayXXf& m_nvf);

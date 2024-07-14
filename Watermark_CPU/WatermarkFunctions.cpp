@@ -36,11 +36,9 @@ Eigen::ArrayXXf WatermarkFunctions::load_W(const std::string w_file, const Eigen
 }
 
 //generate p x p neighbors
-Eigen::VectorXf WatermarkFunctions::create_neighbors(const Eigen::ArrayXXf& padded_image, const int i, const int j, const int p, const int p_squared)
+void WatermarkFunctions::create_neighbors(const Eigen::ArrayXXf& padded_image, Eigen::VectorXf& x_, const int i, const int j, const int p, const int p_squared)
 {
 	const int neighbor_size = (p - 1) / 2;
-	//x_: will contain all the neighbors minus the current pixel value
-	Eigen::VectorXf x_(p_squared - 1);
 	const int start_row = i - neighbor_size;
 	const int start_col = j - neighbor_size;
 	const int end_row = i + neighbor_size;
@@ -49,7 +47,6 @@ Eigen::VectorXf WatermarkFunctions::create_neighbors(const Eigen::ArrayXXf& padd
 	//ignore the central pixel value
 	x_(Eigen::seq(0, p_squared_minus_one_div_2 - 1)) = x_temp(Eigen::seq(0, p_squared_minus_one_div_2 - 1));
 	x_(Eigen::seq(p_squared_minus_one_div_2, p_squared - 2)) = x_temp(Eigen::seq(p_squared_minus_one_div_2 + 1, p_squared - 1));
-	return x_;
 }
 void WatermarkFunctions::compute_NVF_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded, Eigen::ArrayXXf& m_nvf)
 {
@@ -113,12 +110,12 @@ void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& im
 	}
 #pragma omp parallel for
 	for (int i = pad; i < rows + pad; i++) {
-		Eigen::VectorXf x_;
+		Eigen::VectorXf x_(p_squared - 1);
 		Eigen::MatrixXf Rx_pixel;
 		Eigen::VectorXf rx_pixel;
 		for (int j = pad; j < cols + pad; j++) {
 			//calculate p^-1 neighbors
-			x_ = create_neighbors(padded_image, i, j, p, p_squared);
+			create_neighbors(padded_image, x_, i, j, p, p_squared);
 			//calculate Rx and rx
 			Rx_pixel.noalias() = x_ * x_.transpose();
 			rx_pixel.noalias() = x_ * image(i - pad, j - pad);
@@ -146,11 +143,11 @@ void WatermarkFunctions::compute_error_sequence(const Eigen::ArrayXXf& padded, c
 	error_sequence = Eigen::ArrayXXf::Constant(rows, cols, 0.0f);
 #pragma omp parallel for
 	for (int i = 0; i < rows; i++) {
-		Eigen::VectorXf x_;
+		Eigen::VectorXf x_(p_squared - 1);
 		const int padded_i = i + pad;
 		for (int j = 0; j < cols; j++) {
 			const int padded_j = j + pad;
-			x_ = create_neighbors(padded, padded_i, padded_j, p, p_squared);
+			create_neighbors(padded, x_, padded_i, padded_j, p, p_squared);
 			error_sequence(i, j) = padded(padded_i, padded_j) - x_.dot(coefficients);
 		}
 	}
