@@ -76,7 +76,7 @@ Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark(MASK_TYPE mask_type) 
 	else {
 		Eigen::ArrayXXf error_sequence;
 		Eigen::VectorXf coefficients;
-		compute_prediction_error_mask(image, padded, m, error_sequence, coefficients, MASK_CALCULATION_REQUIRED_YES);
+		compute_prediction_error_mask(padded, m, error_sequence, coefficients, MASK_CALCULATION_REQUIRED_YES);
 	}
 	u = m * w;
 	float divisor = std::sqrt(u.square().sum() / (rows * cols));
@@ -97,7 +97,7 @@ Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark_prediction_error()
 }
 
 //compute Prediction error mask
-void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& m_e, Eigen::ArrayXXf& error_sequence, Eigen::VectorXf& coefficients, const bool mask_needed)
+void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& m_e, Eigen::ArrayXXf& error_sequence, Eigen::VectorXf& coefficients, const bool mask_needed)
 {
 	m_e = Eigen::ArrayXXf::Constant(rows, cols, 0.0f);
 	Eigen::MatrixXf Rx = Eigen::ArrayXXf::Constant(p_squared - 1, p_squared - 1, 0.0f);
@@ -118,7 +118,7 @@ void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& im
 			create_neighbors(padded_image, x_, i, j, p, p_squared);
 			//calculate Rx and rx
 			Rx_pixel.noalias() = x_ * x_.transpose();
-			rx_pixel.noalias() = x_ * image(i - pad, j - pad);
+			rx_pixel.noalias() = x_ * padded_image(i, j);
 			Rx_all[omp_get_thread_num()].noalias() += Rx_pixel;
 			rx_all[omp_get_thread_num()].noalias() += rx_pixel;
 		}
@@ -159,11 +159,11 @@ float WatermarkFunctions::mask_detector(const Eigen::ArrayXXf& watermarked_image
 	Eigen::ArrayXXf m, e_z, padded = Eigen::ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = watermarked_image;
 	if (mask_type == MASK_TYPE::NVF) {
-		compute_prediction_error_mask(watermarked_image, padded, m, e_z, a_z, MASK_CALCULATION_REQUIRED_NO);
+		compute_prediction_error_mask(padded, m, e_z, a_z, MASK_CALCULATION_REQUIRED_NO);
 		compute_NVF_mask(watermarked_image, padded, m);
 	}
 	else {
-		compute_prediction_error_mask(watermarked_image, padded, m, e_z, a_z, MASK_CALCULATION_REQUIRED_YES);
+		compute_prediction_error_mask(padded, m, e_z, a_z, MASK_CALCULATION_REQUIRED_YES);
 	}
 
 	Eigen::ArrayXXf e_u;
