@@ -77,7 +77,7 @@ int main(int argc, char** argv)
 	//tests begin
 	try {
 		//initialize main class responsible for watermarking and detection
-		WatermarkFunctions watermarkFunctions(image_m, w_file, p, psnr, num_threads);
+		WatermarkFunctions watermarkFunctions(image_m, w_file, p, psnr);
 
 		double secs = 0;
 		//NVF mask calculation

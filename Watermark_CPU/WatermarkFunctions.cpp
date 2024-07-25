@@ -11,9 +11,9 @@
 using std::cout;
 
 //constructor to initialize all the necessary data
-WatermarkFunctions::WatermarkFunctions(const Eigen::ArrayXXf& image, const std::string w_file_path, const int p, const float psnr, const int num_threads) 
+WatermarkFunctions::WatermarkFunctions(const Eigen::ArrayXXf& image, const std::string w_file_path, const int p, const float psnr) 
 	:image(image), p(p), pad(p/2), rows(image.rows()), cols(image.cols()), padded_rows(rows + 2 * pad), padded_cols(cols + 2 * pad), elems(rows* cols),
-	w(load_W(w_file_path, image.rows(), image.cols())), p_squared(static_cast<int>(std::pow(p, 2))), p_squared_minus_one_div_2((p_squared - 1) / 2), psnr(psnr), num_threads(num_threads)  {
+	w(load_W(w_file_path, image.rows(), image.cols())), p_squared(static_cast<int>(std::pow(p, 2))), p_squared_minus_one_div_2((p_squared - 1) / 2), psnr(psnr), num_threads(omp_get_max_threads())  {
 }
 
 //helper method to load the random noise matrix W from the file specified.
@@ -36,14 +36,14 @@ Eigen::ArrayXXf WatermarkFunctions::load_W(const std::string w_file, const Eigen
 }
 
 //generate p x p neighbors
-void WatermarkFunctions::create_neighbors(const Eigen::ArrayXXf& padded_image, Eigen::VectorXf& x_, const int i, const int j, const int p, const int p_squared)
+void WatermarkFunctions::create_neighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int i, const int j, const int p, const int p_squared)
 {
 	const int neighbor_size = (p - 1) / 2;
 	const int start_row = i - neighbor_size;
 	const int start_col = j - neighbor_size;
 	const int end_row = i + neighbor_size;
 	const int end_col = j + neighbor_size;
-	const auto x_temp = padded_image.block(start_row, start_col, end_row - start_row + 1, end_col - start_col + 1).reshaped();
+	const auto x_temp = array.block(start_row, start_col, end_row - start_row + 1, end_col - start_col + 1).reshaped();
 	//ignore the central pixel value
 	x_(Eigen::seq(0, p_squared_minus_one_div_2 - 1)) = x_temp(Eigen::seq(0, p_squared_minus_one_div_2 - 1));
 	x_(Eigen::seq(p_squared_minus_one_div_2, p_squared - 2)) = x_temp(Eigen::seq(p_squared_minus_one_div_2 + 1, p_squared - 1));
