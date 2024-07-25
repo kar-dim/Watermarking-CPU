@@ -114,7 +114,7 @@ void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& pa
 		Eigen::MatrixXf Rx_pixel;
 		Eigen::VectorXf rx_pixel;
 		for (int j = pad; j < cols + pad; j++) {
-			//calculate p^-1 neighbors
+			//calculate p^2 - 1 neighbors
 			create_neighbors(padded_image, x_, i, j, p, p_squared);
 			//calculate Rx and rx
 			Rx_pixel.noalias() = x_ * x_.transpose();
@@ -174,7 +174,7 @@ float WatermarkFunctions::mask_detector(const Eigen::ArrayXXf& watermarked_image
 #pragma omp parallel sections
 	{
 #pragma omp section
-		dot_ez_eu = (e_z * e_u).sum();
+		dot_ez_eu = e_z.cwiseProduct(e_u).sum();
 #pragma omp section
 		d_ez = std::sqrt(e_z.matrix().squaredNorm());
 #pragma omp section
