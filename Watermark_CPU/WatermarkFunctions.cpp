@@ -84,18 +84,6 @@ Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark(MASK_TYPE mask_type) 
 	return image + (a * u);
 }
 
-//create NVF mask and return the watermarked image
-Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark_NVF()
-{
-	return make_and_add_watermark(MASK_TYPE::NVF);
-}
-
-//create ME mask and return the watermarked image
-Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark_prediction_error()
-{
-	return make_and_add_watermark(MASK_TYPE::ME);
-}
-
 //compute Prediction error mask
 void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& m_e, Eigen::ArrayXXf& error_sequence, Eigen::VectorXf& coefficients, const bool mask_needed)
 {

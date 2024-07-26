@@ -14,7 +14,6 @@
 #include <string>
 #include <cmath>
 #include <memory>
-#include <string>
 using namespace cimg_library;
 using std::cout;
 
@@ -84,7 +83,7 @@ int main(int argc, char** argv)
 		Eigen::ArrayXXf image_m_nvf, image_m_me;
 		for (int i = 0; i < loops; i++) {
 			timer::start();
-			image_m_nvf = watermarkFunctions.make_and_add_watermark_NVF();
+			image_m_nvf = watermarkFunctions.make_and_add_watermark(MASK_TYPE::NVF);
 			timer::end();
 			secs += timer::secs_passed();
 		}
@@ -94,7 +93,7 @@ int main(int argc, char** argv)
 		//Prediction error mask calculation
 		for (int i = 0; i < loops; i++) {
 			timer::start();
-			image_m_me = watermarkFunctions.make_and_add_watermark_prediction_error();
+			image_m_me = watermarkFunctions.make_and_add_watermark(MASK_TYPE::ME);
 			timer::end();
 			secs += timer::secs_passed();
 		}
