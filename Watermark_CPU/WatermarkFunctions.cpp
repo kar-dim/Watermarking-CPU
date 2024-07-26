@@ -1,4 +1,4 @@
-﻿#include "WatermarkFunctions.h"
+﻿#include "WatermarkFunctions.hpp"
 #include <iostream>
 #include <string>
 #include <fstream>

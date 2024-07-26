@@ -4,8 +4,8 @@
 #define cimg_use_cpp11 1
 #define cimg_use_png
 #include "CImg.h"
-#include "UtilityFunctions.h"
-#include "WatermarkFunctions.h"
+#include "UtilityFunctions.hpp"
+#include "WatermarkFunctions.hpp"
 #include <iostream>
 #include <thread>
 #include <omp.h>
