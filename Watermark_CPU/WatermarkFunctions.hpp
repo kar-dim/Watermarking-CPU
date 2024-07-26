@@ -8,8 +8,8 @@ enum MASK_TYPE {
 	NVF
 };
 
-#define MASK_CALCULATION_REQUIRED_NO false
-#define MASK_CALCULATION_REQUIRED_YES true
+#define ME_MASK_CALCULATION_REQUIRED_NO false
+#define ME_MASK_CALCULATION_REQUIRED_YES true
 
 class WatermarkFunctions {
 
