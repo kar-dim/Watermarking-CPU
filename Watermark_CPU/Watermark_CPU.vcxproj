@@ -105,6 +105,7 @@
     <ClInclude Include="INIReader.h" />
     <ClInclude Include="UtilityFunctions.hpp" />
     <ClInclude Include="WatermarkFunctions.hpp" />
+    <ClInclude Include="Watermark_CPU.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

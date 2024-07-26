@@ -1,11 +1,12 @@
 ﻿#pragma warning(disable:4996)
 #define _CRT_SECURE_NO_WARNINGS
+#include "Watermark_CPU.hpp"
+#include "UtilityFunctions.hpp"
+#include "WatermarkFunctions.hpp"
 #include "INIReader.h"
 #define cimg_use_cpp11 1
 #define cimg_use_png
 #include "CImg.h"
-#include "UtilityFunctions.hpp"
-#include "WatermarkFunctions.hpp"
 #include <iostream>
 #include <thread>
 #include <omp.h>
@@ -14,6 +15,8 @@
 #include <string>
 #include <cmath>
 #include <memory>
+#include <cstdlib>
+
 using namespace cimg_library;
 using std::cout;
 
@@ -28,7 +31,7 @@ int main(int argc, char** argv)
 	INIReader inir("settings.ini");
 	if (inir.ParseError() < 0) {
 		cout << "Could not load configuration file, exiting..";
-		return -1;
+		exit_program(EXIT_FAILURE);
 	}
 	const char *image_path = strdup(inir.Get("paths", "image", "NO_IMAGE").c_str());
 	const int p = inir.GetInteger("parameters", "p", 5);
@@ -55,15 +58,15 @@ int main(int argc, char** argv)
 
 	if (cols <= 16 || rows <= 16 || rows >= 16384 || cols >= 16384) {
 		cout << "Image dimensions too low or too high\n";
-		return -1;
+		exit_program(EXIT_FAILURE);
 	}
 	if (p <= 0 || p % 2 != 1 || p > 9) {
 		cout << "p parameter must be a positive odd number less than 9\n";
-		return -1;
+		exit_program(EXIT_FAILURE);
 	}
 	if (psnr <= 0) {
 		cout << "PSNR must be a positive number\n";
-		return -1;
+		exit_program(EXIT_FAILURE);
 	}
 	cout << "Image size is: " << rows << " rows and " << cols << " columns\n\n";
 	auto grayscale_vals = std::unique_ptr<float>(new float[elems]);
@@ -125,7 +128,12 @@ int main(int argc, char** argv)
 	}
 	catch (const std::exception& e) {
 		cout << e.what() << "\n";
+		exit_program(EXIT_FAILURE);
 	}
+	exit_program(EXIT_SUCCESS);
+}
 
-	return 0;
+void exit_program(const int exit_code) {
+	std::system("pause");
+	std::exit(exit_code);
 }
