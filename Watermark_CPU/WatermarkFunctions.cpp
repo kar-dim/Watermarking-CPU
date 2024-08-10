@@ -7,29 +7,27 @@
 #include <vector>
 #include <memory>
 #include <Eigen/Dense>
+#include <stdexcept>
 
+using std::string;
 using std::cout;
 
 //constructor to initialize all the necessary data
-WatermarkFunctions::WatermarkFunctions(const Eigen::ArrayXXf& image, const std::string w_file_path, const int p, const float psnr) 
+WatermarkFunctions::WatermarkFunctions(const Eigen::ArrayXXf& image, const string &w_file_path, const int p, const float psnr) 
 	:image(image), p(p), pad(p/2), rows(image.rows()), cols(image.cols()), padded_rows(rows + 2 * pad), padded_cols(cols + 2 * pad), elems(rows* cols),
 	w(load_W(w_file_path, image.rows(), image.cols())), p_squared(static_cast<int>(std::pow(p, 2))), p_squared_minus_one_div_2((p_squared - 1) / 2), psnr(psnr), num_threads(omp_get_max_threads())  {
 }
 
 //helper method to load the random noise matrix W from the file specified.
-Eigen::ArrayXXf WatermarkFunctions::load_W(const std::string w_file, const Eigen::Index rows, const Eigen::Index cols) {
+Eigen::ArrayXXf WatermarkFunctions::load_W(const string &w_file, const Eigen::Index rows, const Eigen::Index cols) {
 	std::ifstream w_stream(w_file.c_str(), std::ios::binary);
-	if (!w_stream.is_open()) {
-		std::string error_str("Error opening '" + w_file + "' file for Random noise W array");
-		throw std::exception(error_str.c_str());
-	}
+	if (!w_stream.is_open())
+		throw std::runtime_error(string("Error opening '" + w_file + "' file for Random noise W array\n"));
 	w_stream.seekg(0, std::ios::end);
 	const auto total_bytes = w_stream.tellg();
 	w_stream.seekg(0, std::ios::beg);
-	if (rows * cols * sizeof(float) != total_bytes) {
-		std::string error_str("Error: W file total elements != image dimensions! W file total elements: " + std::to_string(total_bytes / (sizeof(float))) + std::string(", Image width: ") + std::to_string(cols) + std::string(", Image height: ") + std::to_string(rows));
-		throw std::exception(error_str.c_str());
-	}
+	if (rows * cols * sizeof(float) != total_bytes)
+		throw std::runtime_error(string("Error: W file total elements != image dimensions! W file total elements: " + std::to_string(total_bytes / (sizeof(float))) + ", Image width: " + std::to_string(cols) + ", Image height: " + std::to_string(rows) + "\n"));
 	std::unique_ptr<float> w_ptr(new float[rows * cols]);
 	w_stream.read(reinterpret_cast<char*>(&w_ptr.get()[0]), total_bytes);
 	return Eigen::Map<Eigen::ArrayXXf>(w_ptr.get(), cols, rows).transpose().eval();

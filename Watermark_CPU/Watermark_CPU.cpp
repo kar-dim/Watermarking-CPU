@@ -19,6 +19,7 @@
 
 using namespace cimg_library;
 using std::cout;
+using std::string;
 
 /*!
  *  \brief  This is a project implementation of my Thesis with title:
@@ -36,7 +37,7 @@ int main(int argc, char** argv)
 	const char *image_path = strdup(inir.Get("paths", "image", "NO_IMAGE").c_str());
 	const int p = inir.GetInteger("parameters", "p", 5);
 	const float psnr = static_cast<float>(inir.GetReal("parameters", "psnr", 30.0f));
-	const std::string w_file = inir.Get("paths", "w_path", "w.txt");
+	const string w_file = inir.Get("paths", "w_path", "w.txt");
 	const int loops = inir.GetInteger("parameters", "loops_for_test", 5);
 	int num_threads = inir.GetInteger("parameters", "threads", 0);
 	if (num_threads <= 0 || num_threads > 256) {
