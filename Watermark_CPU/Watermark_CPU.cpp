@@ -14,8 +14,8 @@
 #include <iomanip>
 #include <string>
 #include <cmath>
-#include <memory>
 #include <cstdlib>
+#include <vector>
 
 using namespace cimg_library;
 using std::cout;
@@ -34,25 +34,24 @@ int main(int argc, char** argv)
 		cout << "Could not load configuration file, exiting..";
 		exit_program(EXIT_FAILURE);
 	}
-	const char *image_path = strdup(inir.Get("paths", "image", "NO_IMAGE").c_str());
+	const string image_path = inir.Get("paths", "image", "NO_IMAGE");
 	const int p = inir.GetInteger("parameters", "p", 5);
 	const float psnr = static_cast<float>(inir.GetReal("parameters", "psnr", 30.0f));
 	const string w_file = inir.Get("paths", "w_path", "w.txt");
-	const int loops = inir.GetInteger("parameters", "loops_for_test", 5);
 	int num_threads = inir.GetInteger("parameters", "threads", 0);
 	if (num_threads <= 0 || num_threads > 256) {
 		auto threads_supported = std::thread::hardware_concurrency();
 		num_threads = threads_supported == 0 ? 2 : threads_supported;
 	}
-	cout << "Using " << num_threads << " parallel threads.\n";
-	omp_set_num_threads(num_threads);
+	int loops = inir.GetInteger("parameters", "loops_for_test", 5); 
+	loops = loops <= 0 || loops > 64 ? 5 : loops;
+
 	//openmp initialization
+	omp_set_num_threads(num_threads);
 #pragma omp parallel for
 	for (int i = 0; i < 24; i++) {}
 
-	cout << "Each test will be executed " << loops << " times. Average time will be shown below\n";
-
-	CImg<float> rgb_image(image_path);
+	CImg<float> rgb_image(image_path.c_str());
 	const int rows = rgb_image.height();
 	const int cols = rgb_image.width();
 	const int elems = rows * cols;
@@ -69,18 +68,23 @@ int main(int argc, char** argv)
 		cout << "PSNR must be a positive number\n";
 		exit_program(EXIT_FAILURE);
 	}
-	cout << "Image size is: " << rows << " rows and " << cols << " columns\n\n";
-	auto grayscale_vals = std::unique_ptr<float>(new float[elems]);
-	for (int i = 0; i < elems; i++)
-		grayscale_vals.get()[i] = static_cast<float>(std::round(0.299 * rgb_image.data()[i]) + std::round(0.587 * rgb_image.data()[i + elems]) + std::round(0.114 * rgb_image.data()[i + 2 * elems]));
 
-	Eigen::ArrayXXf image_m = Eigen::Map<Eigen::ArrayXXf>(grayscale_vals.get(), cols, rows);
-	image_m.transposeInPlace();
+	cout << "Using " << num_threads << " parallel threads.\n";
+	cout << "Each test will be executed " << loops << " times. Average time will be shown below\n";
+	cout << "Image size is: " << rows << " rows and " << cols << " columns\n\n";
+
+	std::vector<float> grayscale_values(elems);
+#pragma omp parallel for
+	for (int i = 0; i < elems; i++)
+		grayscale_values[i] = static_cast<float>(std::round(0.299 * rgb_image.data()[i]) + std::round(0.587 * rgb_image.data()[i + elems]) + std::round(0.114 * rgb_image.data()[i + 2 * elems]));
+
+	Eigen::ArrayXXf image_grayscale = Eigen::Map<Eigen::ArrayXXf>(grayscale_values.data(), cols, rows);
+	image_grayscale.transposeInPlace();
 
 	//tests begin
 	try {
 		//initialize main class responsible for watermarking and detection
-		WatermarkFunctions watermarkFunctions(image_m, w_file, p, psnr);
+		WatermarkFunctions watermarkFunctions(image_grayscale, w_file, p, psnr);
 
 		double secs = 0;
 		//NVF mask calculation
