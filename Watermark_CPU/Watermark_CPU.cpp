@@ -1,8 +1,8 @@
 ﻿#pragma warning(disable:4996)
 #define _CRT_SECURE_NO_WARNINGS
 #include "Watermark_CPU.hpp"
-#include "UtilityFunctions.hpp"
-#include "WatermarkFunctions.hpp"
+#include "Utilities.hpp"
+#include "Watermark.hpp"
 #include "INIReader.h"
 #define cimg_use_cpp11 1
 #define cimg_use_png
@@ -84,14 +84,14 @@ int main(int argc, char** argv)
 	//tests begin
 	try {
 		//initialize main class responsible for watermarking and detection
-		WatermarkFunctions watermarkFunctions(image_grayscale, w_file, p, psnr);
+		WatermarkFunctions watermark_obj(image_grayscale, w_file, p, psnr);
 
 		double secs = 0;
 		//NVF mask calculation
 		Eigen::ArrayXXf image_m_nvf, image_m_me;
 		for (int i = 0; i < loops; i++) {
 			timer::start();
-			image_m_nvf = watermarkFunctions.make_and_add_watermark(MASK_TYPE::NVF);
+			image_m_nvf = watermark_obj.make_and_add_watermark(MASK_TYPE::NVF);
 			timer::end();
 			secs += timer::secs_passed();
 		}
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
 		//Prediction error mask calculation
 		for (int i = 0; i < loops; i++) {
 			timer::start();
-			image_m_me = watermarkFunctions.make_and_add_watermark(MASK_TYPE::ME);
+			image_m_me = watermark_obj.make_and_add_watermark(MASK_TYPE::ME);
 			timer::end();
 			secs += timer::secs_passed();
 		}
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
 		//NVF mask detection
 		for (int i = 0; i < loops; i++) {
 			timer::start();
-			correlation_nvf = watermarkFunctions.mask_detector(image_m_nvf, MASK_TYPE::NVF);
+			correlation_nvf = watermark_obj.mask_detector(image_m_nvf, MASK_TYPE::NVF);
 			timer::end();
 			secs += timer::secs_passed();
 		}
@@ -122,7 +122,7 @@ int main(int argc, char** argv)
 		//Prediction error mask detection
 		for (int i = 0; i < loops; i++) {
 			timer::start();
-			correlation_me = watermarkFunctions.mask_detector(image_m_me, MASK_TYPE::ME);
+			correlation_me = watermark_obj.mask_detector(image_m_me, MASK_TYPE::ME);
 			timer::end();
 			secs += timer::secs_passed();
 		}

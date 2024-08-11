@@ -94,8 +94,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="UtilityFunctions.cpp" />
-    <ClCompile Include="WatermarkFunctions.cpp" />
+    <ClCompile Include="Utilities.cpp" />
+    <ClCompile Include="Watermark.cpp" />
     <ClCompile Include="Watermark_CPU.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -103,8 +103,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="INIReader.h" />
-    <ClInclude Include="UtilityFunctions.hpp" />
-    <ClInclude Include="WatermarkFunctions.hpp" />
+    <ClInclude Include="Utilities.hpp" />
+    <ClInclude Include="Watermark.hpp" />
     <ClInclude Include="Watermark_CPU.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
