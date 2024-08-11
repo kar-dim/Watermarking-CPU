@@ -13,13 +13,13 @@ using std::string;
 using std::cout;
 
 //constructor to initialize all the necessary data
-WatermarkFunctions::WatermarkFunctions(const Eigen::ArrayXXf& image, const string &w_file_path, const int p, const float psnr) 
-	:image(image), p(p), pad(p/2), rows(image.rows()), cols(image.cols()), padded_rows(rows + 2 * pad), padded_cols(cols + 2 * pad), elems(rows* cols),
+Watermark::Watermark(const Tensor3d& image_rgb, const Eigen::ArrayXXf& image, const string &w_file_path, const int p, const float psnr)
+	:image_rgb(image_rgb), image(image), p(p), pad(p/2), rows(image.rows()), cols(image.cols()), padded_rows(rows + 2 * pad), padded_cols(cols + 2 * pad), elems(rows* cols),
 	w(load_W(w_file_path, image.rows(), image.cols())), p_squared(static_cast<int>(std::pow(p, 2))), p_squared_minus_one_div_2((p_squared - 1) / 2), psnr(psnr), num_threads(omp_get_max_threads())  {
 }
 
 //helper method to load the random noise matrix W from the file specified.
-Eigen::ArrayXXf WatermarkFunctions::load_W(const string &w_file, const Eigen::Index rows, const Eigen::Index cols) {
+Eigen::ArrayXXf Watermark::load_W(const string &w_file, const Eigen::Index rows, const Eigen::Index cols) {
 	std::ifstream w_stream(w_file.c_str(), std::ios::binary);
 	if (!w_stream.is_open())
 		throw std::runtime_error(string("Error opening '" + w_file + "' file for Random noise W array\n"));
@@ -34,7 +34,7 @@ Eigen::ArrayXXf WatermarkFunctions::load_W(const string &w_file, const Eigen::In
 }
 
 //generate p x p neighbors
-void WatermarkFunctions::create_neighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int i, const int j, const int p, const int p_squared)
+void Watermark::create_neighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int i, const int j, const int p, const int p_squared)
 {
 	const int neighbor_size = (p - 1) / 2;
 	const int start_row = i - neighbor_size;
@@ -46,7 +46,7 @@ void WatermarkFunctions::create_neighbors(const Eigen::ArrayXXf& array, Eigen::V
 	x_(Eigen::seq(0, p_squared_minus_one_div_2 - 1)) = x_temp(Eigen::seq(0, p_squared_minus_one_div_2 - 1));
 	x_(Eigen::seq(p_squared_minus_one_div_2, p_squared - 2)) = x_temp(Eigen::seq(p_squared_minus_one_div_2 + 1, p_squared - 1));
 }
-void WatermarkFunctions::compute_NVF_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded, Eigen::ArrayXXf& m_nvf)
+void Watermark::compute_NVF_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded, Eigen::ArrayXXf& m_nvf)
 {
 	m_nvf = Eigen::ArrayXXf::Constant(rows, cols, 0.0f);
 	const int neighbor_size = (p - 1) / 2;
@@ -64,13 +64,12 @@ void WatermarkFunctions::compute_NVF_mask(const Eigen::ArrayXXf& image, const Ei
 	}
 }
 
-Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark(MASK_TYPE mask_type) {
+Tensor3d Watermark::make_and_add_watermark(MASK_TYPE mask_type) {
 	Eigen::ArrayXXf padded = Eigen::ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = image;
 	Eigen::ArrayXXf m, u;
-	if (mask_type == MASK_TYPE::NVF) {
+	if (mask_type == MASK_TYPE::NVF)
 		compute_NVF_mask(image, padded, m);
-	}
 	else {
 		Eigen::ArrayXXf error_sequence;
 		Eigen::VectorXf coefficients;
@@ -79,11 +78,24 @@ Eigen::ArrayXXf WatermarkFunctions::make_and_add_watermark(MASK_TYPE mask_type) 
 	u = m * w;
 	float divisor = std::sqrt(u.square().sum() / (rows * cols));
 	float a = (255.0f / std::sqrt(std::pow(10.0f, psnr / 10.0f))) / divisor;
-	return image + (a * u);
+
+	const Eigen::ArrayXXf u_strength = u * a;
+	Eigen::TensorMap<Eigen::Tensor<const float, 2>> u_strength_tensor(u_strength.data(), u_strength.rows(), u_strength.cols());
+	Tensor3d watermarked_tensor(image_rgb.dimensions());
+#pragma omp parallel sections
+	{
+#pragma omp section
+		watermarked_tensor.chip(0, 2) = image_rgb.chip(0, 2) + u_strength_tensor;
+#pragma omp section
+		watermarked_tensor.chip(1, 2) = image_rgb.chip(1, 2) + u_strength_tensor;
+#pragma omp section
+		watermarked_tensor.chip(2, 2) = image_rgb.chip(2, 2) + u_strength_tensor;
+	}
+	return watermarked_tensor;
 }
 
 //compute Prediction error mask
-void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& m_e, Eigen::ArrayXXf& error_sequence, Eigen::VectorXf& coefficients, const bool mask_needed)
+void Watermark::compute_prediction_error_mask(const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& m_e, Eigen::ArrayXXf& error_sequence, Eigen::VectorXf& coefficients, const bool mask_needed)
 {
 	m_e = Eigen::ArrayXXf::Constant(rows, cols, 0.0f);
 	Eigen::MatrixXf Rx = Eigen::ArrayXXf::Constant(p_squared - 1, p_squared - 1, 0.0f);
@@ -124,7 +136,7 @@ void WatermarkFunctions::compute_prediction_error_mask(const Eigen::ArrayXXf& pa
 }
 
 //computes the prediction error sequence 
-void WatermarkFunctions::compute_error_sequence(const Eigen::ArrayXXf& padded, const Eigen::VectorXf& coefficients, Eigen::ArrayXXf& error_sequence)
+void Watermark::compute_error_sequence(const Eigen::ArrayXXf& padded, const Eigen::VectorXf& coefficients, Eigen::ArrayXXf& error_sequence)
 {
 	error_sequence = Eigen::ArrayXXf::Constant(rows, cols, 0.0f);
 #pragma omp parallel for
@@ -139,7 +151,7 @@ void WatermarkFunctions::compute_error_sequence(const Eigen::ArrayXXf& padded, c
 	}
 }
 //main mask detector for Me and NVF masks
-float WatermarkFunctions::mask_detector(const Eigen::ArrayXXf& watermarked_image, MASK_TYPE mask_type)
+float Watermark::mask_detector(const Eigen::ArrayXXf& watermarked_image, MASK_TYPE mask_type)
 {
 	Eigen::VectorXf a_z;
 	Eigen::ArrayXXf m, e_z, padded = Eigen::ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);

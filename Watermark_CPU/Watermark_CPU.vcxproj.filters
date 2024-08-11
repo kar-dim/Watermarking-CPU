@@ -41,5 +41,8 @@
     <ClInclude Include="Watermark_CPU.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="cimg_init.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

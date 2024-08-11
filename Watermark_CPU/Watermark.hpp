@@ -2,6 +2,7 @@
 
 #include <Eigen/Dense>
 #include <string>
+#include <unsupported/Eigen/CXX11/Tensor>
 
 enum MASK_TYPE {
 	ME,
@@ -10,13 +11,16 @@ enum MASK_TYPE {
 
 using std::string;
 
+typedef Eigen::Tensor<float, 3> Tensor3d;
+
 #define ME_MASK_CALCULATION_REQUIRED_NO false
 #define ME_MASK_CALCULATION_REQUIRED_YES true
 
-class WatermarkFunctions {
+class Watermark {
 
 private:
 	const Eigen::ArrayXXf image, w;
+	const Tensor3d image_rgb;
 	const int p, p_squared, p_squared_minus_one_div_2, pad, num_threads;
 	const float psnr;
 	const Eigen::Index rows, cols, elems, padded_cols, padded_rows;
@@ -28,7 +32,7 @@ private:
 	void compute_error_sequence(const Eigen::ArrayXXf& padded, const Eigen::VectorXf& coefficients, Eigen::ArrayXXf& error_sequence);
 
 public:
-	WatermarkFunctions(const Eigen::ArrayXXf& image, const string &w_file_path, const int p, const float psnr);
-	Eigen::ArrayXXf make_and_add_watermark(MASK_TYPE type);
+	Watermark(const Tensor3d& image_rgb, const Eigen::ArrayXXf& image, const string &w_file_path, const int p, const float psnr);
+	Tensor3d make_and_add_watermark(MASK_TYPE type);
 	float mask_detector(const Eigen::ArrayXXf& watermarked_image, MASK_TYPE type);
 };

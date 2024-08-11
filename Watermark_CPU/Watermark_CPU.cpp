@@ -4,18 +4,18 @@
 #include "Utilities.hpp"
 #include "Watermark.hpp"
 #include "INIReader.h"
-#define cimg_use_cpp11 1
-#define cimg_use_png
-#include "CImg.h"
+#include <Eigen/Dense>
+#include "cimg_init.hpp"
 #include <iostream>
 #include <thread>
 #include <omp.h>
-#include <Eigen/Dense>
 #include <iomanip>
 #include <string>
-#include <cmath>
 #include <cstdlib>
-#include <vector>
+
+#define R_WEIGHT 0.299f
+#define G_WEIGHT 0.587f
+#define B_WEIGHT 0.114f
 
 using namespace cimg_library;
 using std::cout;
@@ -73,46 +73,48 @@ int main(int argc, char** argv)
 	cout << "Each test will be executed " << loops << " times. Average time will be shown below\n";
 	cout << "Image size is: " << rows << " rows and " << cols << " columns\n\n";
 
-	std::vector<float> grayscale_values(elems);
-#pragma omp parallel for
-	for (int i = 0; i < elems; i++)
-		grayscale_values[i] = static_cast<float>(std::round(0.299 * rgb_image.data()[i]) + std::round(0.587 * rgb_image.data()[i + elems]) + std::round(0.114 * rgb_image.data()[i + 2 * elems]));
-
-	Eigen::ArrayXXf image_grayscale = Eigen::Map<Eigen::ArrayXXf>(grayscale_values.data(), cols, rows);
-	image_grayscale.transposeInPlace();
-
+	//copy from cimg to Eigen
+	timer::start();
+	const Tensor3d tensor_rgb = cimg_to_eigen_tensor(rgb_image);
+	Eigen::ArrayXXf array_grayscale = eigen_tensor_to_grayscale_array(tensor_rgb, R_WEIGHT, G_WEIGHT, B_WEIGHT);
+	timer::end();
+	cout << "Time to load image from disk and initialize Cimg and Eigen memory objects: " << timer::secs_passed() << " seconds\n\n";
+	
 	//tests begin
 	try {
 		//initialize main class responsible for watermarking and detection
-		WatermarkFunctions watermark_obj(image_grayscale, w_file, p, psnr);
+		Watermark watermark_obj(tensor_rgb, array_grayscale, w_file, p, psnr);
 
 		double secs = 0;
 		//NVF mask calculation
-		Eigen::ArrayXXf image_m_nvf, image_m_me;
+		Tensor3d watermark_NVF, watermark_ME;
 		for (int i = 0; i < loops; i++) {
 			timer::start();
-			image_m_nvf = watermark_obj.make_and_add_watermark(MASK_TYPE::NVF);
+			watermark_NVF = watermark_obj.make_and_add_watermark(MASK_TYPE::NVF);
 			timer::end();
 			secs += timer::secs_passed();
 		}
 		cout << "Time to calculate NVF mask of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / loops << " seconds.\n\n";
-
+		
 		secs = 0;
 		//Prediction error mask calculation
 		for (int i = 0; i < loops; i++) {
 			timer::start();
-			image_m_me = watermark_obj.make_and_add_watermark(MASK_TYPE::ME);
+			watermark_ME = watermark_obj.make_and_add_watermark(MASK_TYPE::ME);
 			timer::end();
 			secs += timer::secs_passed();
 		}
 		cout << "Time to calculate ME mask of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / loops << " seconds.\n\n";
+
+		const Eigen::ArrayXXf watermarked_NVF_gray = eigen_tensor_to_grayscale_array(watermark_NVF, R_WEIGHT, G_WEIGHT, B_WEIGHT);
+		const Eigen::ArrayXXf watermarked_ME_gray = eigen_tensor_to_grayscale_array(watermark_ME, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 
 		float correlation_nvf, correlation_me;
 		secs = 0;
 		//NVF mask detection
 		for (int i = 0; i < loops; i++) {
 			timer::start();
-			correlation_nvf = watermark_obj.mask_detector(image_m_nvf, MASK_TYPE::NVF);
+			correlation_nvf = watermark_obj.mask_detector(watermarked_NVF_gray, MASK_TYPE::NVF);
 			timer::end();
 			secs += timer::secs_passed();
 		}
@@ -122,7 +124,7 @@ int main(int argc, char** argv)
 		//Prediction error mask detection
 		for (int i = 0; i < loops; i++) {
 			timer::start();
-			correlation_me = watermark_obj.mask_detector(image_m_me, MASK_TYPE::ME);
+			correlation_me = watermark_obj.mask_detector(watermarked_ME_gray, MASK_TYPE::ME);
 			timer::end();
 			secs += timer::secs_passed();
 		}
@@ -130,6 +132,27 @@ int main(int argc, char** argv)
 
 		cout << "Correlation [NVF]: " << std::fixed << std::setprecision(16) << correlation_nvf << "\n";
 		cout << "Correlation [ME]: " << std::fixed << std::setprecision(16) << correlation_me << "\n";
+
+		//save watermarked images to disk
+		if (inir.GetBoolean("options", "save_watermarked_files_to_disk", false)) {
+			cout << "\nSaving watermarked files to disk...\n";
+#pragma omp parallel sections 
+{
+#pragma omp section
+		{
+			string watermarked_file = add_suffix_before_extension(image_path, "_W_NVF");
+			auto watermarked_nvf = eigen_tensor_to_cimg(watermark_NVF, 0.0f, 255.0f);
+			watermarked_nvf.save_png(watermarked_file.c_str());
+			}
+#pragma omp section
+			{
+			string watermarked_file = add_suffix_before_extension(image_path, "_W_ME");
+			auto watermarked_me = eigen_tensor_to_cimg(watermark_ME, 0.0f, 255.0f);
+			watermarked_me.save_png(watermarked_file.c_str());
+			}
+}
+			cout << "Successully saved to disk\n";
+		}
 	}
 	catch (const std::exception& e) {
 		cout << e.what() << "\n";
