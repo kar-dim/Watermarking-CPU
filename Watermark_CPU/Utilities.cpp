@@ -1,11 +1,16 @@
 ﻿#include "Utilities.hpp"
 #include <chrono>
 #include <string>
+#include "tensor_types.hpp"
 #include "cimg_init.hpp"
 #include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <omp.h>
 #include <utility>
+
+using std::string;
+using namespace cimg_library;
+using namespace Eigen;
 
 string add_suffix_before_extension(const string& file, const string& suffix) {
 	auto dot = file.find_last_of('.');
@@ -38,7 +43,6 @@ Tensor3d cimg_to_eigen_tensor(CImg<float>& rgb_image) {
 ArrayXXf eigen_tensor_to_grayscale_array(const Tensor3d& tensor_rgb, const float r_weight, const float g_weight, const float b_weight) {
 	const auto rows = tensor_rgb.dimension(0);
 	const auto cols = tensor_rgb.dimension(1);
-	//Tensor2d tensor_2d(rows, cols);
 	Tensor2d tensor_2d = tensor_rgb.chip(0, 2) * r_weight + tensor_rgb.chip(1, 2) * g_weight + tensor_rgb.chip(2, 2) * b_weight;
 	return ArrayXXf::Map(tensor_2d.data(), rows, cols);
 }

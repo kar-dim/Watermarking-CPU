@@ -7,8 +7,15 @@
 #include <vector>
 #include <memory>
 #include <Eigen/Dense>
+#include <unsupported/Eigen/CXX11/Tensor>
+#include "tensor_types.hpp"
 #include <stdexcept>
 
+#define ME_MASK_CALCULATION_REQUIRED_NO false
+#define ME_MASK_CALCULATION_REQUIRED_YES true
+
+using std::string;
+using namespace Eigen;
 using std::cout;
 
 //constructor to initialize all the necessary data
@@ -79,7 +86,7 @@ Tensor3d Watermark::make_and_add_watermark(MASK_TYPE mask_type) {
 	float a = (255.0f / std::sqrt(std::pow(10.0f, psnr / 10.0f))) / divisor;
 
 	const ArrayXXf u_strength = u * a;
-	TensorMap<Tensor<const float, 2>> u_strength_tensor(u_strength.data(), u_strength.rows(), u_strength.cols());
+	const TensorMap<ImmutableTensor2d> u_strength_tensor(u_strength.data(), rows, cols);
 	Tensor3d watermarked_tensor(image_rgb.dimensions());
 #pragma omp parallel sections
 	{

@@ -104,6 +104,7 @@
   <ItemGroup>
     <ClInclude Include="cimg_init.hpp" />
     <ClInclude Include="INIReader.h" />
+    <ClInclude Include="tensor_types.hpp" />
     <ClInclude Include="Utilities.hpp" />
     <ClInclude Include="Watermark.hpp" />
     <ClInclude Include="Watermark_CPU.hpp" />

@@ -1,8 +1,8 @@
 ﻿#pragma warning(disable:4996)
 #define _CRT_SECURE_NO_WARNINGS
 #include "Watermark_CPU.hpp"
-#include "Utilities.hpp"
 #include "Watermark.hpp"
+#include "Utilities.hpp"
 #include "INIReader.h"
 #include <Eigen/Dense>
 #include "cimg_init.hpp"

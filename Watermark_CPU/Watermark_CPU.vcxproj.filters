@@ -44,5 +44,8 @@
     <ClInclude Include="cimg_init.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="tensor_types.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
