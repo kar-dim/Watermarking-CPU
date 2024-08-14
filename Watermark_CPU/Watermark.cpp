@@ -7,19 +7,17 @@
 #include <vector>
 #include <memory>
 #include <Eigen/Dense>
-#include <unsupported/Eigen/CXX11/Tensor>
-#include "tensor_types.hpp"
 #include <stdexcept>
+#include "eigen_rgb_array.hpp"
 
 #define ME_MASK_CALCULATION_REQUIRED_NO false
 #define ME_MASK_CALCULATION_REQUIRED_YES true
 
-using std::string;
 using namespace Eigen;
-using std::cout;
+using std::string;
 
 //constructor to initialize all the necessary data
-Watermark::Watermark(const Tensor3d& image_rgb, const ArrayXXf& image, const string &w_file_path, const int p, const float psnr)
+Watermark::Watermark(const EigenArrayRGB& image_rgb, const ArrayXXf& image, const string &w_file_path, const int p, const float psnr)
 	:image_rgb(image_rgb), image(image), p(p), pad(p/2), rows(image.rows()), cols(image.cols()), padded_rows(rows + 2 * pad), padded_cols(cols + 2 * pad), elems(rows* cols),
 	w(load_W(w_file_path, image.rows(), image.cols())), p_squared(static_cast<int>(std::pow(p, 2))), p_squared_minus_one_div_2((p_squared - 1) / 2), psnr(psnr), num_threads(omp_get_max_threads())  {
 }
@@ -70,7 +68,7 @@ void Watermark::compute_NVF_mask(const ArrayXXf& image, const ArrayXXf& padded, 
 	}
 }
 
-Tensor3d Watermark::make_and_add_watermark(MASK_TYPE mask_type) {
+EigenArrayRGB Watermark::make_and_add_watermark(MASK_TYPE mask_type) {
 	ArrayXXf padded = ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = image;
 	ArrayXXf m, u;
@@ -86,18 +84,18 @@ Tensor3d Watermark::make_and_add_watermark(MASK_TYPE mask_type) {
 	float a = (255.0f / std::sqrt(std::pow(10.0f, psnr / 10.0f))) / divisor;
 
 	const ArrayXXf u_strength = u * a;
-	const TensorMap<ImmutableTensor2d> u_strength_tensor(u_strength.data(), rows, cols);
-	Tensor3d watermarked_tensor(image_rgb.dimensions());
+	EigenArrayRGB watermarked_image;
+	
 #pragma omp parallel sections
 	{
 #pragma omp section
-		watermarked_tensor.chip(0, 2) = image_rgb.chip(0, 2) + u_strength_tensor;
+		watermarked_image[0] = (image_rgb[0] + u_strength).cwiseMax(0).cwiseMin(255);
 #pragma omp section
-		watermarked_tensor.chip(1, 2) = image_rgb.chip(1, 2) + u_strength_tensor;
+		watermarked_image[1] = (image_rgb[1] + u_strength).cwiseMax(0).cwiseMin(255);
 #pragma omp section
-		watermarked_tensor.chip(2, 2) = image_rgb.chip(2, 2) + u_strength_tensor;
+		watermarked_image[2] = (image_rgb[2] + u_strength).cwiseMax(0).cwiseMin(255);
 	}
-	return watermarked_tensor;
+	return watermarked_image;
 }
 
 //compute Prediction error mask

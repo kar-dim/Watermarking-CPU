@@ -6,6 +6,7 @@
 #include "INIReader.h"
 #include <Eigen/Dense>
 #include "cimg_init.hpp"
+#include "eigen_rgb_array.hpp"
 #include <iostream>
 #include <thread>
 #include <omp.h>
@@ -52,9 +53,9 @@ int main(int argc, char** argv)
 #pragma omp parallel for
 	for (int i = 0; i < 24; i++) {}
 
-	CImg<float> rgb_image(image_path.c_str());
-	const int rows = rgb_image.height();
-	const int cols = rgb_image.width();
+	CImg<float> rgb_image_cimg(image_path.c_str());
+	const int rows = rgb_image_cimg.height();
+	const int cols = rgb_image_cimg.width();
 	const int elems = rows * cols;
 
 	if (cols <= 16 || rows <= 16 || rows >= 16384 || cols >= 16384) {
@@ -76,19 +77,19 @@ int main(int argc, char** argv)
 
 	//copy from cimg to Eigen
 	timer::start();
-	const Tensor3d tensor_rgb = cimg_to_eigen_tensor(rgb_image);
-	const ArrayXXf array_grayscale = eigen_tensor_to_grayscale_array(tensor_rgb, R_WEIGHT, G_WEIGHT, B_WEIGHT);
+	const EigenArrayRGB array_rgb = cimg_to_eigen_rgb_array(rgb_image_cimg);
+	const ArrayXXf array_grayscale = eigen_rgb_array_to_grayscale_array(array_rgb, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 	timer::end();
 	cout << "Time to load image from disk and initialize Cimg and Eigen memory objects: " << timer::secs_passed() << " seconds\n\n";
 	
 	//tests begin
 	try {
 		//initialize main class responsible for watermarking and detection
-		Watermark watermark_obj(tensor_rgb, array_grayscale, w_file, p, psnr);
+		Watermark watermark_obj(array_rgb, array_grayscale, w_file, p, psnr);
 
 		double secs = 0;
 		//NVF mask calculation
-		Tensor3d watermark_NVF, watermark_ME;
+		EigenArrayRGB watermark_NVF, watermark_ME;
 		for (int i = 0; i < loops; i++) {
 			timer::start();
 			watermark_NVF = watermark_obj.make_and_add_watermark(MASK_TYPE::NVF);
@@ -107,8 +108,8 @@ int main(int argc, char** argv)
 		}
 		cout << "Time to calculate ME mask of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / loops << " seconds.\n\n";
 
-		const ArrayXXf watermarked_NVF_gray = eigen_tensor_to_grayscale_array(watermark_NVF, R_WEIGHT, G_WEIGHT, B_WEIGHT);
-		const ArrayXXf watermarked_ME_gray = eigen_tensor_to_grayscale_array(watermark_ME, R_WEIGHT, G_WEIGHT, B_WEIGHT);
+		const ArrayXXf watermarked_NVF_gray = eigen_rgb_array_to_grayscale_array(watermark_NVF, R_WEIGHT, G_WEIGHT, B_WEIGHT);
+		const ArrayXXf watermarked_ME_gray = eigen_rgb_array_to_grayscale_array(watermark_ME, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 
 		float correlation_nvf, correlation_me;
 		secs = 0;
@@ -138,20 +139,20 @@ int main(int argc, char** argv)
 		if (inir.GetBoolean("options", "save_watermarked_files_to_disk", false)) {
 			cout << "\nSaving watermarked files to disk...\n";
 #pragma omp parallel sections 
-	{
+{
 #pragma omp section
-		{
+{
 			string watermarked_file = add_suffix_before_extension(image_path, "_W_NVF");
-			auto cimg_array_to_save = eigen_tensor_to_cimg(watermark_NVF, 0.0f, 255.0f);
+			auto cimg_array_to_save = eigen_rgb_array_to_cimg(watermark_NVF);
 			cimg_array_to_save.save_png(watermarked_file.c_str());
-			}
+}
 #pragma omp section
-			{
+{
 			string watermarked_file = add_suffix_before_extension(image_path, "_W_ME");
-			auto cimg_array_to_save = eigen_tensor_to_cimg(watermark_ME, 0.0f, 255.0f);
+			auto cimg_array_to_save = eigen_rgb_array_to_cimg(watermark_ME);
 			cimg_array_to_save.save_png(watermarked_file.c_str());
-			}
-	}
+}
+}
 			cout << "Successully saved to disk\n";
 		}
 	}

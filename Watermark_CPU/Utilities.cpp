@@ -1,50 +1,51 @@
 ﻿#include "Utilities.hpp"
 #include <chrono>
 #include <string>
-#include "tensor_types.hpp"
 #include "cimg_init.hpp"
 #include <Eigen/Dense>
-#include <unsupported/Eigen/CXX11/Tensor>
 #include <omp.h>
 #include <utility>
+#include "eigen_rgb_array.hpp"
 
-using std::string;
 using namespace cimg_library;
 using namespace Eigen;
+
+using std::string;
 
 string add_suffix_before_extension(const string& file, const string& suffix) {
 	auto dot = file.find_last_of('.');
 	return dot == string::npos ? file + suffix : file.substr(0, dot) + suffix + file.substr(dot);
 }
 
-CImg<float> eigen_tensor_to_cimg(const Tensor3d& tensor_rgb, const float clamp_low, const float clamp_high) {
-	const int rows = static_cast<int>(tensor_rgb.dimension(0));
-	const int cols = static_cast<int>(tensor_rgb.dimension(1));
-	const int channels = static_cast<int>(tensor_rgb.dimension(2));
-	CImg<float> cimg_image(cols, rows, 1, channels);
+CImg<float> eigen_rgb_array_to_cimg(const EigenArrayRGB& array_rgb) {
+	const auto rows = array_rgb[0].rows();
+	const auto cols = array_rgb[0].cols();
+	CImg<float> cimg_image(static_cast<unsigned int>(cols), static_cast<unsigned int>(rows), 1, 3);
 #pragma omp parallel for
 	for (int y = 0; y < rows; ++y)
 		for (int x = 0; x < cols; ++x)
-			for (int c = 0; c < channels; c++)
-				cimg_image(x, y, 0, c) = std::max(clamp_low, std::min(tensor_rgb(y, x, c), clamp_high));
+			for (int channel = 0; channel < 3; channel++)
+				cimg_image(x, y, 0, channel) = array_rgb[channel](y, x);
 	return cimg_image;
 }
 
-Tensor3d cimg_to_eigen_tensor(CImg<float>& rgb_image) {
-	Tensor3d tensor_rgb(rgb_image.height(), rgb_image.width(), rgb_image.spectrum());
+EigenArrayRGB cimg_to_eigen_rgb_array(CImg<float>& rgb_image) {
+	const int rows = rgb_image.height();
+	const int cols = rgb_image.width();
+	EigenArrayRGB rgb_array = { ArrayXXf(rows,cols), ArrayXXf(rows,cols), ArrayXXf(rows, cols) };
 #pragma omp parallel for
 	for (int y = 0; y < rgb_image.height(); y++)
 		for (int x = 0; x < rgb_image.width(); x++)
-			for (int c = 0; c < rgb_image.spectrum(); c++)
-				tensor_rgb(y, x, c) = rgb_image(x, y, 0, c);
-	return tensor_rgb;
+			for (int channel = 0; channel < 3; channel++)
+				rgb_array[channel](y,x) = rgb_image(x, y, 0, channel);
+	return rgb_array;
 }
 
-ArrayXXf eigen_tensor_to_grayscale_array(const Tensor3d& tensor_rgb, const float r_weight, const float g_weight, const float b_weight) {
-	const auto rows = tensor_rgb.dimension(0);
-	const auto cols = tensor_rgb.dimension(1);
-	Tensor2d tensor_2d = tensor_rgb.chip(0, 2) * r_weight + tensor_rgb.chip(1, 2) * g_weight + tensor_rgb.chip(2, 2) * b_weight;
-	return ArrayXXf::Map(tensor_2d.data(), rows, cols);
+ArrayXXf eigen_rgb_array_to_grayscale_array(const EigenArrayRGB& array_rgb, const float r_weight, const float g_weight, const float b_weight) {
+	const auto rows = array_rgb[0].rows();
+	const auto cols = array_rgb[0].cols();
+	ArrayXXf grayscale = (array_rgb[0] * r_weight) + (array_rgb[1] * g_weight) + (array_rgb[2] * b_weight);
+	return grayscale;
 }
 
 //χρονομέτρηση

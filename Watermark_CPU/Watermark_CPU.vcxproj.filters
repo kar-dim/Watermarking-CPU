@@ -44,7 +44,7 @@
     <ClInclude Include="cimg_init.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="tensor_types.hpp">
+    <ClInclude Include="eigen_rgb_array.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
