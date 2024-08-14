@@ -2,7 +2,7 @@
 
 #include <Eigen/Dense>
 #include <string>
-#include <array>
+#include "eigen_rgb_array.hpp"
 
 enum MASK_TYPE {
 	ME,
@@ -13,7 +13,7 @@ class Watermark {
 
 private:
 	const Eigen::ArrayXXf image, w;
-	const std::array<Eigen::ArrayXXf, 3> image_rgb;
+	const EigenArrayRGB image_rgb;
 	const int p, p_squared, p_squared_minus_one_div_2, pad, num_threads;
 	const float psnr;
 	const Eigen::Index rows, cols, elems, padded_cols, padded_rows;
@@ -25,7 +25,7 @@ private:
 	void compute_error_sequence(const Eigen::ArrayXXf& padded, const Eigen::VectorXf& coefficients, Eigen::ArrayXXf& error_sequence);
 
 public:
-	Watermark(const std::array<Eigen::ArrayXXf, 3>& image_rgb, const Eigen::ArrayXXf& image, const std::string &w_file_path, const int p, const float psnr);
-	std::array<Eigen::ArrayXXf, 3> make_and_add_watermark(MASK_TYPE type);
+	Watermark(const EigenArrayRGB& image_rgb, const Eigen::ArrayXXf& image, const std::string &w_file_path, const int p, const float psnr);
+	EigenArrayRGB make_and_add_watermark(MASK_TYPE type);
 	float mask_detector(const Eigen::ArrayXXf& watermarked_image, MASK_TYPE type);
 };
