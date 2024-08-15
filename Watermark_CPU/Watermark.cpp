@@ -17,8 +17,8 @@ using std::string;
 
 //constructor to initialize all the necessary data
 Watermark::Watermark(const EigenArrayRGB& image_rgb, const ArrayXXf& image, const string &w_file_path, const int p, const float psnr)
-	:image_rgb(image_rgb), image(image), p(p), pad(p/2), rows(image.rows()), cols(image.cols()), padded_rows(rows + 2 * pad), padded_cols(cols + 2 * pad), elems(rows* cols),
-	w(load_W(w_file_path, image.rows(), image.cols())), p_squared(static_cast<int>(std::pow(p, 2))), p_squared_minus_one_div_2((p_squared - 1) / 2), psnr(psnr), num_threads(omp_get_max_threads())  {
+	:image_rgb(image_rgb), image(image), w(load_W(w_file_path, image.rows(), image.cols())), p(p), p_squared(static_cast<int>(std::pow(p, 2))), p_squared_minus_one_div_2((p_squared - 1) / 2), 
+	pad(p / 2), num_threads(omp_get_max_threads()), rows(image.rows()), cols(image.cols()), padded_rows(rows + 2 * pad), padded_cols(cols + 2 * pad), psnr(psnr) {
 }
 
 //helper method to load the random noise matrix W from the file specified.

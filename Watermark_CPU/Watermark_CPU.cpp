@@ -56,7 +56,6 @@ int main(int argc, char** argv)
 	CImg<float> rgb_image_cimg(image_path.c_str());
 	const int rows = rgb_image_cimg.height();
 	const int cols = rgb_image_cimg.width();
-	const int elems = rows * cols;
 
 	if (cols <= 16 || rows <= 16 || rows >= 16384 || cols >= 16384) {
 		cout << "Image dimensions too low or too high\n";

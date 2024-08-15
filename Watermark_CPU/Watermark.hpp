@@ -12,11 +12,11 @@ enum MASK_TYPE {
 class Watermark {
 
 private:
-	const Eigen::ArrayXXf image, w;
 	const EigenArrayRGB image_rgb;
+	const Eigen::ArrayXXf image, w;
 	const int p, p_squared, p_squared_minus_one_div_2, pad, num_threads;
+	const Eigen::Index rows, cols, padded_rows, padded_cols;
 	const float psnr;
-	const Eigen::Index rows, cols, elems, padded_cols, padded_rows;
 
 	void create_neighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int i, const int j, const int p, const int p_squared);
 	Eigen::ArrayXXf load_W(const std::string &w_file, const Eigen::Index rows, const Eigen::Index cols);

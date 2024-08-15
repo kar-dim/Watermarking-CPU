@@ -44,10 +44,7 @@ EigenArrayRGB cimg_to_eigen_rgb_array(CImg<float>& rgb_image) {
 }
 
 ArrayXXf eigen_rgb_array_to_grayscale_array(const EigenArrayRGB& array_rgb, const float r_weight, const float g_weight, const float b_weight) {
-	const auto rows = array_rgb[0].rows();
-	const auto cols = array_rgb[0].cols();
-	ArrayXXf grayscale = (array_rgb[0] * r_weight) + (array_rgb[1] * g_weight) + (array_rgb[2] * b_weight);
-	return grayscale;
+	return (array_rgb[0] * r_weight) + (array_rgb[1] * g_weight) + (array_rgb[2] * b_weight);
 }
 
 //χρονομέτρηση
