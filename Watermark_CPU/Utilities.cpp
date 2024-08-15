@@ -3,8 +3,6 @@
 #include <string>
 #include "cimg_init.hpp"
 #include <Eigen/Dense>
-#include <omp.h>
-#include <utility>
 #include "eigen_rgb_array.hpp"
 
 using namespace cimg_library;
@@ -21,6 +19,8 @@ CImg<float> eigen_rgb_array_to_cimg(const EigenArrayRGB& array_rgb) {
 	const auto rows = array_rgb[0].rows();
 	const auto cols = array_rgb[0].cols();
 	CImg<float> cimg_image(static_cast<unsigned int>(cols), static_cast<unsigned int>(rows), 1, 3);
+	//a parallel pixel by pixel copy for loop is faster instead of three parallel (channel) bulk memory copies
+	//because cimg and eigen use different memory layouts, and transposing is required which would make the copy much slower
 #pragma omp parallel for
 	for (int y = 0; y < rows; ++y)
 		for (int x = 0; x < cols; ++x)
@@ -32,6 +32,8 @@ CImg<float> eigen_rgb_array_to_cimg(const EigenArrayRGB& array_rgb) {
 EigenArrayRGB cimg_to_eigen_rgb_array(CImg<float>& rgb_image) {
 	const int rows = rgb_image.height();
 	const int cols = rgb_image.width();
+	//a parallel pixel by pixel copy for loop is faster instead of three parallel (channel) bulk memory copies
+	//because cimg and eigen use different memory layouts, and transposing is required which would make the copy much slower
 	EigenArrayRGB rgb_array = { ArrayXXf(rows,cols), ArrayXXf(rows,cols), ArrayXXf(rows, cols) };
 #pragma omp parallel for
 	for (int y = 0; y < rgb_image.height(); y++)

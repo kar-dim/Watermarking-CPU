@@ -1,5 +1,4 @@
 ﻿#include "Watermark.hpp"
-#include <iostream>
 #include <string>
 #include <fstream>
 #include <cmath>
