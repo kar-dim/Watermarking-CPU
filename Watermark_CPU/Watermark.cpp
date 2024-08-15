@@ -82,19 +82,12 @@ EigenArrayRGB Watermark::make_and_add_watermark(MASK_TYPE mask_type) {
 	u = m * w;
 	float divisor = std::sqrt(u.square().sum() / (rows * cols));
 	float a = (255.0f / std::sqrt(std::pow(10.0f, psnr / 10.0f))) / divisor;
-
 	const ArrayXXf u_strength = u * a;
-	EigenArrayRGB watermarked_image;
 	
-#pragma omp parallel sections
-	{
-#pragma omp section
-		watermarked_image[0] = (image_rgb[0] + u_strength).cwiseMax(0).cwiseMin(255);
-#pragma omp section
-		watermarked_image[1] = (image_rgb[1] + u_strength).cwiseMax(0).cwiseMin(255);
-#pragma omp section
-		watermarked_image[2] = (image_rgb[2] + u_strength).cwiseMax(0).cwiseMin(255);
-	}
+	EigenArrayRGB watermarked_image;
+#pragma omp parallel for
+	for (int channel = 0; channel < 3; channel++)
+		watermarked_image[channel] = (image_rgb[channel] + u_strength).cwiseMax(0).cwiseMin(255);
 	return watermarked_image;
 }
 
