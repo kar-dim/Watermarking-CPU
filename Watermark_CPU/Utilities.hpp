@@ -1,9 +1,9 @@
 #pragma once
-#include <string>
 #include "cimg_init.hpp"
 #include "eigen_rgb_array.hpp"
-#include <Eigen/Dense>
 #include <chrono>
+#include <Eigen/Dense>
+#include <string>
 
 std::string add_suffix_before_extension(const std::string& file, const std::string& suffix);
 cimg_library::CImg<float> eigen_rgb_array_to_cimg(const EigenArrayRGB& image_rgb);

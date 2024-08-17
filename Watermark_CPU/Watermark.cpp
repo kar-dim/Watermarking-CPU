@@ -1,13 +1,13 @@
-﻿#include "Watermark.hpp"
-#include <string>
-#include <fstream>
+﻿#include "eigen_rgb_array.hpp"
+#include "Watermark.hpp"
 #include <cmath>
-#include <omp.h>
-#include <vector>
-#include <memory>
 #include <Eigen/Dense>
+#include <fstream>
+#include <memory>
+#include <omp.h>
 #include <stdexcept>
-#include "eigen_rgb_array.hpp"
+#include <string>
+#include <vector>
 
 #define ME_MASK_CALCULATION_REQUIRED_NO false
 #define ME_MASK_CALCULATION_REQUIRED_YES true

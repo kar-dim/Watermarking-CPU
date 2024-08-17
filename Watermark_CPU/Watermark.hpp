@@ -1,8 +1,8 @@
 #pragma once
 
+#include "eigen_rgb_array.hpp"
 #include <Eigen/Dense>
 #include <string>
-#include "eigen_rgb_array.hpp"
 
 enum MASK_TYPE {
 	ME,

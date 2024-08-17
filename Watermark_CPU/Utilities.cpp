@@ -1,9 +1,9 @@
-﻿#include "Utilities.hpp"
-#include <chrono>
-#include <string>
-#include "cimg_init.hpp"
-#include <Eigen/Dense>
+﻿#include "cimg_init.hpp"
 #include "eigen_rgb_array.hpp"
+#include "Utilities.hpp"
+#include <chrono>
+#include <Eigen/Dense>
+#include <string>
 
 using namespace cimg_library;
 using namespace Eigen;

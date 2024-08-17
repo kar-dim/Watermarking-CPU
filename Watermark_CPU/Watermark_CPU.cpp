@@ -1,18 +1,20 @@
 ﻿#pragma warning(disable:4996)
 #define _CRT_SECURE_NO_WARNINGS
-#include "Watermark_CPU.hpp"
-#include "Watermark.hpp"
-#include "Utilities.hpp"
-#include "INIReader.h"
-#include <Eigen/Dense>
 #include "cimg_init.hpp"
 #include "eigen_rgb_array.hpp"
-#include <iostream>
-#include <thread>
-#include <omp.h>
-#include <iomanip>
-#include <string>
+#include "INIReader.h"
+#include "Utilities.hpp"
+#include "Watermark.hpp"
+#include "Watermark_CPU.hpp"
 #include <cstdlib>
+#include <Eigen/Dense>
+#include <exception>
+#include <iomanip>
+#include <iostream>
+#include <omp.h>
+#include <string>
+#include <thread>
+#include <ios>
 
 #define R_WEIGHT 0.299f
 #define G_WEIGHT 0.587f
@@ -37,6 +39,7 @@ int main(int argc, char** argv)
 		exit_program(EXIT_FAILURE);
 	}
 	const string image_path = inir.Get("paths", "image", "NO_IMAGE");
+	const bool show_fps = inir.GetBoolean("options", "execution_time_in_fps", false);
 	const int p = inir.GetInteger("parameters", "p", 5);
 	const float psnr = static_cast<float>(inir.GetReal("parameters", "psnr", 30.0f));
 	const string w_file = inir.Get("paths", "w_path", "w.txt");
@@ -79,7 +82,7 @@ int main(int argc, char** argv)
 	const EigenArrayRGB array_rgb = cimg_to_eigen_rgb_array(rgb_image_cimg);
 	const ArrayXXf array_grayscale = eigen_rgb_array_to_grayscale_array(array_rgb, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 	timer::end();
-	cout << "Time to load image from disk and initialize Cimg and Eigen memory objects: " << timer::secs_passed() << " seconds\n\n";
+	cout << "Time to load image from disk and initialize CImg and Eigen memory objects: " << timer::secs_passed() << " seconds\n\n";
 	
 	//tests begin
 	try {
@@ -95,7 +98,7 @@ int main(int argc, char** argv)
 			timer::end();
 			secs += timer::secs_passed();
 		}
-		cout << "Time to calculate NVF mask of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / loops << " seconds.\n\n";
+		cout << "Calculation of NVF mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(show_fps, secs / loops) << "\n\n";
 		
 		secs = 0;
 		//Prediction error mask calculation
@@ -105,7 +108,7 @@ int main(int argc, char** argv)
 			timer::end();
 			secs += timer::secs_passed();
 		}
-		cout << "Time to calculate ME mask of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / loops << " seconds.\n\n";
+		cout << "Calculation of ME mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(show_fps, secs / loops) << "\n\n";
 
 		const ArrayXXf watermarked_NVF_gray = eigen_rgb_array_to_grayscale_array(watermark_NVF, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 		const ArrayXXf watermarked_ME_gray = eigen_rgb_array_to_grayscale_array(watermark_ME, R_WEIGHT, G_WEIGHT, B_WEIGHT);
@@ -119,7 +122,7 @@ int main(int argc, char** argv)
 			timer::end();
 			secs += timer::secs_passed();
 		}
-		cout << "Time to calculate NVF [COR] of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / loops << " seconds.\n\n";
+		cout << "Calculation of the watermark correlation (NVF) of an image with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(show_fps, secs / loops) << "\n\n";
 
 		secs = 0;
 		//Prediction error mask detection
@@ -129,7 +132,7 @@ int main(int argc, char** argv)
 			timer::end();
 			secs += timer::secs_passed();
 		}
-		cout << "Time to calculate ME [COR] of " << rows << " rows and " << cols << " columns with parameters:\np= " << p << "\tPSNR(dB)= " << psnr << "\n" << secs / loops << " seconds.\n\n";
+		cout << "Calculation of the watermark correlation (ME) of an image with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(show_fps, secs / loops) << "\n\n";
 
 		cout << "Correlation [NVF]: " << std::fixed << std::setprecision(16) << correlation_nvf << "\n";
 		cout << "Correlation [ME]: " << std::fixed << std::setprecision(16) << correlation_me << "\n";
@@ -160,6 +163,10 @@ int main(int argc, char** argv)
 		exit_program(EXIT_FAILURE);
 	}
 	exit_program(EXIT_SUCCESS);
+}
+
+string execution_time(bool show_fps, double seconds) {
+	return string(show_fps ? std::to_string(1 / seconds) + " FPS." : std::to_string(seconds) + " seconds.");
 }
 
 void exit_program(const int exit_code) {
