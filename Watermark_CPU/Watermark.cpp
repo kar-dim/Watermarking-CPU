@@ -37,7 +37,7 @@ ArrayXXf Watermark::load_W(const string &w_file, const Index rows, const Index c
 }
 
 //generate p x p neighbors
-void Watermark::create_neighbors(const ArrayXXf& array, VectorXf& x_, const int i, const int j, const int p, const int p_squared)
+void Watermark::create_neighbors(const ArrayXXf& array, VectorXf& x_, const int i, const int j)
 {
 	const int neighbor_size = (p - 1) / 2;
 	const int start_row = i - neighbor_size;
@@ -108,7 +108,7 @@ void Watermark::compute_prediction_error_mask(const ArrayXXf& padded_image, Arra
 		VectorXf rx_pixel;
 		for (int j = pad; j < cols + pad; j++) {
 			//calculate p^2 - 1 neighbors
-			create_neighbors(padded_image, x_, i, j, p, p_squared);
+			create_neighbors(padded_image, x_, i, j);
 			//calculate Rx and rx
 			Rx_pixel.noalias() = x_ * x_.transpose();
 			rx_pixel.noalias() = x_ * padded_image(i, j);
@@ -140,7 +140,7 @@ void Watermark::compute_error_sequence(const ArrayXXf& padded, const VectorXf& c
 		const int padded_i = i + pad;
 		for (int j = 0; j < cols; j++) {
 			const int padded_j = j + pad;
-			create_neighbors(padded, x_, padded_i, padded_j, p, p_squared);
+			create_neighbors(padded, x_, padded_i, padded_j);
 			error_sequence(i, j) = padded(padded_i, padded_j) - x_.dot(coefficients);
 		}
 	}
