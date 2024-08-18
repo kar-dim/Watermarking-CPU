@@ -1,6 +1,4 @@
-﻿#pragma warning(disable:4996)
-#define _CRT_SECURE_NO_WARNINGS
-#include "cimg_init.hpp"
+﻿#include "cimg_init.hpp"
 #include "eigen_rgb_array.hpp"
 #include "INIReader.h"
 #include "Utilities.hpp"
