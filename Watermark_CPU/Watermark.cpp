@@ -72,15 +72,15 @@ ArrayXXf Watermark::compute_custom_mask(const ArrayXXf& image, const ArrayXXf& p
 EigenArrayRGB Watermark::make_and_add_watermark(MASK_TYPE mask_type) {
 	ArrayXXf padded = ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = image;
-	ArrayXXf m, u;
+	ArrayXXf mask, u;
 	if (mask_type == MASK_TYPE::NVF)
-		m = compute_custom_mask(image, padded);
+		mask = compute_custom_mask(image, padded);
 	else {
 		ArrayXXf error_sequence;
 		VectorXf coefficients;
-		m = compute_prediction_error_mask(padded, error_sequence, coefficients, ME_MASK_CALCULATION_REQUIRED_YES);
+		mask = compute_prediction_error_mask(padded, error_sequence, coefficients, ME_MASK_CALCULATION_REQUIRED_YES);
 	}
-	u = m * w;
+	u = mask * w;
 	float divisor = std::sqrt(u.square().sum() / (rows * cols));
 	float a = (255.0f / std::sqrt(std::pow(10.0f, psnr / 10.0f))) / divisor;
 	const ArrayXXf u_strength = u * a;
@@ -125,7 +125,7 @@ ArrayXXf Watermark::compute_prediction_error_mask(const ArrayXXf& padded_image, 
 	}
 	coefficients = Rx.fullPivLu().solve(rx);
 	//calculate ex(i,j)
-	compute_error_sequence(padded_image, coefficients, error_sequence);
+	error_sequence = calculate_error_sequence(padded_image, coefficients);
 	if (mask_needed) {
 		ArrayXXf error_sequence_abs = error_sequence.abs().eval();
 		return error_sequence_abs / error_sequence_abs.maxCoeff();
@@ -134,9 +134,9 @@ ArrayXXf Watermark::compute_prediction_error_mask(const ArrayXXf& padded_image, 
 }
 
 //computes the prediction error sequence 
-void Watermark::compute_error_sequence(const ArrayXXf& padded, const VectorXf& coefficients, ArrayXXf& error_sequence)
+ArrayXXf Watermark::calculate_error_sequence(const ArrayXXf& padded, const VectorXf& coefficients)
 {
-	error_sequence = ArrayXXf(rows, cols);
+	ArrayXXf error_sequence(rows, cols);
 #pragma omp parallel for
 	for (int i = 0; i < rows; i++) {
 		VectorXf x_(p_squared - 1);
@@ -147,25 +147,24 @@ void Watermark::compute_error_sequence(const ArrayXXf& padded, const VectorXf& c
 			error_sequence(i, j) = padded(padded_i, padded_j) - x_.dot(coefficients);
 		}
 	}
+	return error_sequence;
 }
 
 //main mask detector for Me and NVF masks
 float Watermark::mask_detector(const ArrayXXf& watermarked_image, MASK_TYPE mask_type)
 {
 	VectorXf a_z;
-	ArrayXXf m, e_z, padded = ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
+	ArrayXXf mask, e_z, padded = ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = watermarked_image;
 	if (mask_type == MASK_TYPE::NVF) {
 		compute_prediction_error_mask(padded, e_z, a_z, ME_MASK_CALCULATION_REQUIRED_NO);
-		m = compute_custom_mask(watermarked_image, padded);
+		mask = compute_custom_mask(watermarked_image, padded);
 	}
-	else {
-		m = compute_prediction_error_mask(padded, e_z, a_z, ME_MASK_CALCULATION_REQUIRED_YES);
-	}
-
-	ArrayXXf e_u;
-	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = (m * w);
-	compute_error_sequence(padded, a_z, e_u);
+	else
+		mask = compute_prediction_error_mask(padded, e_z, a_z, ME_MASK_CALCULATION_REQUIRED_YES);
+	
+	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = (mask * w);
+	ArrayXXf e_u = calculate_error_sequence(padded, a_z);
 	float dot_ez_eu, d_ez, d_eu;
 	
 #pragma omp parallel sections
