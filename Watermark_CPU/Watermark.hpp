@@ -20,8 +20,8 @@ private:
 
 	void create_neighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int i, const int j);
 	Eigen::ArrayXXf load_W(const std::string &w_file, const Eigen::Index rows, const Eigen::Index cols);
-	void compute_NVF_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded, Eigen::ArrayXXf& m_nvf);
-	void compute_prediction_error_mask(const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& m, Eigen::ArrayXXf& error_sequence, Eigen::VectorXf& coefficients, const bool mask_needed);
+	Eigen::ArrayXXf compute_custom_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded);
+	Eigen::ArrayXXf compute_prediction_error_mask(const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& error_sequence, Eigen::VectorXf& coefficients, const bool mask_needed);
 	void compute_error_sequence(const Eigen::ArrayXXf& padded, const Eigen::VectorXf& coefficients, Eigen::ArrayXXf& error_sequence);
 
 public:

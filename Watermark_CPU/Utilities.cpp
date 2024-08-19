@@ -29,7 +29,7 @@ CImg<float> eigen_rgb_array_to_cimg(const EigenArrayRGB& array_rgb) {
 	return cimg_image;
 }
 
-EigenArrayRGB cimg_to_eigen_rgb_array(CImg<float>& rgb_image) {
+EigenArrayRGB cimg_to_eigen_rgb_array(const CImg<float>& rgb_image) {
 	const int rows = rgb_image.height();
 	const int cols = rgb_image.width();
 	//a parallel pixel by pixel copy for loop is faster instead of three parallel (channel) bulk memory copies

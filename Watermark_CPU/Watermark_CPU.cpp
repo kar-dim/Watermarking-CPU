@@ -31,7 +31,7 @@ using std::string;
  */
 int main(int argc, char** argv)
 {
-	INIReader inir("settings.ini");
+	const INIReader inir("settings.ini");
 	if (inir.ParseError() < 0) {
 		cout << "Could not load configuration file, exiting..";
 		exit_program(EXIT_FAILURE);
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 #pragma omp parallel for
 	for (int i = 0; i < 24; i++) {}
 
-	CImg<float> rgb_image_cimg(image_path.c_str());
+	const CImg<float> rgb_image_cimg(image_path.c_str());
 	const int rows = rgb_image_cimg.height();
 	const int cols = rgb_image_cimg.width();
 
@@ -163,7 +163,7 @@ int main(int argc, char** argv)
 	exit_program(EXIT_SUCCESS);
 }
 
-string execution_time(bool show_fps, double seconds) {
+string execution_time(const bool show_fps, const double seconds) {
 	return string(show_fps ? std::to_string(1 / seconds) + " FPS." : std::to_string(seconds) + " seconds.");
 }
 
