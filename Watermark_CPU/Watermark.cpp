@@ -22,7 +22,7 @@ Watermark::Watermark(const EigenArrayRGB& image_rgb, const ArrayXXf& image, cons
 }
 
 //helper method to load the random noise matrix W from the file specified.
-ArrayXXf Watermark::load_W(const string &w_file, const Index rows, const Index cols) {
+ArrayXXf Watermark::load_W(const string &w_file, const Index rows, const Index cols) const {
 	std::ifstream w_stream(w_file.c_str(), std::ios::binary);
 	if (!w_stream.is_open())
 		throw std::runtime_error(string("Error opening '" + w_file + "' file for Random noise W array\n"));
@@ -37,7 +37,7 @@ ArrayXXf Watermark::load_W(const string &w_file, const Index rows, const Index c
 }
 
 //generate p x p neighbors
-void Watermark::create_neighbors(const ArrayXXf& array, VectorXf& x_, const int i, const int j)
+void Watermark::create_neighbors(const ArrayXXf& array, VectorXf& x_, const int i, const int j) const
 {
 	const int neighbor_size = (p - 1) / 2;
 	const int start_row = i - neighbor_size;
@@ -50,7 +50,7 @@ void Watermark::create_neighbors(const ArrayXXf& array, VectorXf& x_, const int 
 	x_(seq(p_squared_minus_one_div_2, p_squared - 2)) = x_temp(seq(p_squared_minus_one_div_2 + 1, p_squared - 1));
 }
 
-ArrayXXf Watermark::compute_custom_mask(const ArrayXXf& image, const ArrayXXf& padded)
+ArrayXXf Watermark::compute_custom_mask(const ArrayXXf& image, const ArrayXXf& padded) const
 {
 	ArrayXXf m_nvf(rows, cols);
 	const int neighbor_size = (p - 1) / 2;
@@ -69,7 +69,7 @@ ArrayXXf Watermark::compute_custom_mask(const ArrayXXf& image, const ArrayXXf& p
 	return m_nvf;
 }
 
-EigenArrayRGB Watermark::make_and_add_watermark(MASK_TYPE mask_type) {
+EigenArrayRGB Watermark::make_and_add_watermark(MASK_TYPE mask_type) const {
 	ArrayXXf padded = ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = image;
 	ArrayXXf mask, u;
@@ -93,7 +93,7 @@ EigenArrayRGB Watermark::make_and_add_watermark(MASK_TYPE mask_type) {
 }
 
 //compute Prediction error mask
-ArrayXXf Watermark::compute_prediction_error_mask(const ArrayXXf& padded_image, ArrayXXf& error_sequence, VectorXf& coefficients, const bool mask_needed)
+ArrayXXf Watermark::compute_prediction_error_mask(const ArrayXXf& padded_image, ArrayXXf& error_sequence, VectorXf& coefficients, const bool mask_needed) const
 {
 	MatrixXf Rx = ArrayXXf::Constant(p_squared - 1, p_squared - 1, 0.0f);
 	MatrixXf rx = ArrayXXf::Constant(p_squared - 1, 1, 0.0f);
@@ -134,7 +134,7 @@ ArrayXXf Watermark::compute_prediction_error_mask(const ArrayXXf& padded_image, 
 }
 
 //computes the prediction error sequence 
-ArrayXXf Watermark::calculate_error_sequence(const ArrayXXf& padded, const VectorXf& coefficients)
+ArrayXXf Watermark::calculate_error_sequence(const ArrayXXf& padded, const VectorXf& coefficients) const
 {
 	ArrayXXf error_sequence(rows, cols);
 #pragma omp parallel for
@@ -151,7 +151,7 @@ ArrayXXf Watermark::calculate_error_sequence(const ArrayXXf& padded, const Vecto
 }
 
 //main mask detector for Me and NVF masks
-float Watermark::mask_detector(const ArrayXXf& watermarked_image, MASK_TYPE mask_type)
+float Watermark::mask_detector(const ArrayXXf& watermarked_image, MASK_TYPE mask_type) const
 {
 	VectorXf a_z;
 	ArrayXXf mask, e_z, padded = ArrayXXf::Constant(padded_rows, padded_cols, 0.0f);
