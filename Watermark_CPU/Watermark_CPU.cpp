@@ -139,20 +139,12 @@ int main(int argc, char** argv)
 		if (inir.GetBoolean("options", "save_watermarked_files_to_disk", false)) {
 			cout << "\nSaving watermarked files to disk...\n";
 #pragma omp parallel sections 
-{
+			{
 #pragma omp section
-{
-			string watermarked_file = add_suffix_before_extension(image_path, "_W_NVF");
-			auto cimg_array_to_save = eigen_rgb_array_to_cimg(watermark_NVF);
-			cimg_array_to_save.save_png(watermarked_file.c_str());
-}
+				save_watermarked_image(image_path, "_W_NVF", watermark_NVF);
 #pragma omp section
-{
-			string watermarked_file = add_suffix_before_extension(image_path, "_W_ME");
-			auto cimg_array_to_save = eigen_rgb_array_to_cimg(watermark_ME);
-			cimg_array_to_save.save_png(watermarked_file.c_str());
-}
-}
+				save_watermarked_image(image_path, "_W_ME", watermark_ME);
+			}
 			cout << "Successully saved to disk\n";
 		}
 	}
@@ -163,10 +155,18 @@ int main(int argc, char** argv)
 	exit_program(EXIT_SUCCESS);
 }
 
+//calculate execution time in seconds, or show FPS value
 string execution_time(const bool show_fps, const double seconds) {
 	return string(show_fps ? std::to_string(1 / seconds) + " FPS." : std::to_string(seconds) + " seconds.");
 }
 
+//save the provided Eigen RGB array containing a watermarked image to disk
+void save_watermarked_image(const string& image_path, const string& suffix, const EigenArrayRGB& watermark) {
+	std::string watermarked_file = add_suffix_before_extension(image_path, suffix);
+	eigen_rgb_array_to_cimg(watermark).save_png(watermarked_file.c_str());
+}
+
+//exits the program with the provided exit code
 void exit_program(const int exit_code) {
 	std::system("pause");
 	std::exit(exit_code);
