@@ -18,7 +18,7 @@ private:
 	const Eigen::Index rows, cols, padded_rows, padded_cols;
 	const float psnr;
 
-	void create_neighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int i, const int j) const;
+	void create_neighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int neighbor_size, const int i, const int j) const;
 	Eigen::ArrayXXf load_W(const std::string &w_file, const Eigen::Index rows, const Eigen::Index cols) const;
 	Eigen::ArrayXXf compute_custom_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded) const;
 	Eigen::ArrayXXf compute_prediction_error_mask(const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& error_sequence, Eigen::VectorXf& coefficients, const bool mask_needed) const;

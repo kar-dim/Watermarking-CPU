@@ -37,9 +37,8 @@ ArrayXXf Watermark::load_W(const string &w_file, const Index rows, const Index c
 }
 
 //generate p x p neighbors
-void Watermark::create_neighbors(const ArrayXXf& array, VectorXf& x_, const int i, const int j) const
+void Watermark::create_neighbors(const ArrayXXf& array, VectorXf& x_, const int neighbor_size, const int i, const int j) const
 {
-	const int neighbor_size = (p - 1) / 2;
 	const int start_row = i - neighbor_size;
 	const int start_col = j - neighbor_size;
 	const int end_row = i + neighbor_size;
@@ -103,12 +102,13 @@ ArrayXXf Watermark::compute_prediction_error_mask(const ArrayXXf& padded_image, 
 		Rx_all[i] = Rx;
 		rx_all[i] = rx;
 	}
+	const int neighbor_size = (p - 1) / 2;
 #pragma omp parallel for
 	for (int i = pad; i < rows + pad; i++) {
 		VectorXf x_(p_squared - 1);
 		for (int j = pad; j < cols + pad; j++) {
 			//calculate p^2 - 1 neighbors
-			create_neighbors(padded_image, x_, i, j);
+			create_neighbors(padded_image, x_, neighbor_size, i, j);
 			//calculate Rx and rx
 			Rx_all[omp_get_thread_num()].noalias() += x_ * x_.transpose();
 			rx_all[omp_get_thread_num()].noalias() += x_ * padded_image(i, j);
@@ -133,13 +133,14 @@ ArrayXXf Watermark::compute_prediction_error_mask(const ArrayXXf& padded_image, 
 ArrayXXf Watermark::calculate_error_sequence(const ArrayXXf& padded, const VectorXf& coefficients) const
 {
 	ArrayXXf error_sequence(rows, cols);
+	const int neighbor_size = (p - 1) / 2;
 #pragma omp parallel for
 	for (int i = 0; i < rows; i++) {
 		VectorXf x_(p_squared - 1);
 		const int padded_i = i + pad;
 		for (int j = 0; j < cols; j++) {
 			const int padded_j = j + pad;
-			create_neighbors(padded, x_, padded_i, padded_j);
+			create_neighbors(padded, x_, neighbor_size, padded_i, padded_j);
 			error_sequence(i, j) = padded(padded_i, padded_j) - x_.dot(coefficients);
 		}
 	}
