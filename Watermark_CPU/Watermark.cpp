@@ -80,8 +80,8 @@ EigenArrayRGB Watermark::make_and_add_watermark(MASK_TYPE mask_type) const {
 		mask = compute_prediction_error_mask(padded, error_sequence, coefficients, ME_MASK_CALCULATION_REQUIRED_YES);
 	}
 	u = mask * w;
-	float divisor = std::sqrt(u.square().sum() / (rows * cols));
-	float a = (255.0f / std::sqrt(std::pow(10.0f, psnr / 10.0f))) / divisor;
+	float divisor = sqrt(u.square().sum() / (rows * cols));
+	float a = (255.0f / sqrt(pow(10.0f, psnr / 10.0f))) / divisor;
 	const ArrayXXf u_strength = u * a;
 	
 	EigenArrayRGB watermarked_image;
