@@ -62,8 +62,8 @@ int main(int argc, char** argv)
 		cout << "Image dimensions too low or too high\n";
 		exit_program(EXIT_FAILURE);
 	}
-	if (p <= 0 || p % 2 != 1 || p > 9) {
-		cout << "p parameter must be a positive odd number less than 9\n";
+	if (p <= 1 || p % 2 != 1 || p > 9) {
+		cout << "p parameter must be a positive odd number greater than or equal to 3 and less than or equal to 9\n";
 		exit_program(EXIT_FAILURE);
 	}
 	if (psnr <= 0) {
