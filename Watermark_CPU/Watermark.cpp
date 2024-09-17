@@ -17,12 +17,13 @@ using std::string;
 
 //constructor to initialize all the necessary data
 Watermark::Watermark(const EigenArrayRGB& image_rgb, const ArrayXXf& image, const string &w_file_path, const int p, const float psnr)
-	:image_rgb(image_rgb), image(image), w(load_W(w_file_path, image.rows(), image.cols())), p(p), p_squared(static_cast<int>(std::pow(p, 2))), p_squared_minus_one_div_2((p_squared - 1) / 2), 
-	pad(p / 2), num_threads(omp_get_max_threads()), rows(image.rows()), cols(image.cols()), padded_rows(rows + 2 * pad), padded_cols(cols + 2 * pad), psnr(psnr) {
-}
+	:image_rgb(image_rgb), image(image), w(load_W(w_file_path, image.rows(), image.cols())), p(p), p_squared(static_cast<int>(std::pow(p, 2))), half_neighbors_size((p_squared - 1) / 2), 
+	pad(p / 2), num_threads(omp_get_max_threads()), rows(image.rows()), cols(image.cols()), padded_rows(rows + 2 * pad), padded_cols(cols + 2 * pad), strength_factor((255.0f / sqrt(pow(10.0f, psnr / 10.0f)))) 
+{ }
 
 //helper method to load the random noise matrix W from the file specified.
-ArrayXXf Watermark::load_W(const string &w_file, const Index rows, const Index cols) const {
+ArrayXXf Watermark::load_W(const string &w_file, const Index rows, const Index cols) const 
+{
 	std::ifstream w_stream(w_file.c_str(), std::ios::binary);
 	if (!w_stream.is_open())
 		throw std::runtime_error(string("Error opening '" + w_file + "' file for Random noise W array\n"));
@@ -45,8 +46,8 @@ void Watermark::create_neighbors(const ArrayXXf& array, VectorXf& x_, const int 
 	const int end_col = j + neighbor_size;
 	const auto x_temp = array.block(start_row, start_col, end_row - start_row + 1, end_col - start_col + 1).reshaped();
 	//ignore the central pixel value
-	x_(seq(0, p_squared_minus_one_div_2 - 1)) = x_temp(seq(0, p_squared_minus_one_div_2 - 1));
-	x_(seq(p_squared_minus_one_div_2, p_squared - 2)) = x_temp(seq(p_squared_minus_one_div_2 + 1, p_squared - 1));
+	x_(seq(0, half_neighbors_size - 1)) = x_temp(seq(0, half_neighbors_size - 1));
+	x_(seq(half_neighbors_size, p_squared - 2)) = x_temp(seq(half_neighbors_size + 1, p_squared - 1));
 }
 
 ArrayXXf Watermark::compute_custom_mask(const ArrayXXf& image, const ArrayXXf& padded) const
@@ -68,10 +69,11 @@ ArrayXXf Watermark::compute_custom_mask(const ArrayXXf& image, const ArrayXXf& p
 	return m_nvf;
 }
 
-EigenArrayRGB Watermark::make_and_add_watermark(MASK_TYPE mask_type) const {
+EigenArrayRGB Watermark::make_and_add_watermark(MASK_TYPE mask_type) const 
+{
 	ArrayXXf padded = ArrayXXf::Zero(padded_rows, padded_cols);
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = image;
-	ArrayXXf mask, u;
+	ArrayXXf mask;
 	if (mask_type == MASK_TYPE::NVF)
 		mask = compute_custom_mask(image, padded);
 	else {
@@ -79,9 +81,8 @@ EigenArrayRGB Watermark::make_and_add_watermark(MASK_TYPE mask_type) const {
 		VectorXf coefficients;
 		mask = compute_prediction_error_mask(padded, error_sequence, coefficients, ME_MASK_CALCULATION_REQUIRED_YES);
 	}
-	u = mask * w;
-	float divisor = sqrt(u.square().sum() / (rows * cols));
-	float a = (255.0f / sqrt(pow(10.0f, psnr / 10.0f))) / divisor;
+	const ArrayXXf u = mask * w;
+	const float a = strength_factor / sqrt(u.square().sum() / (rows * cols));
 	const ArrayXXf u_strength = u * a;
 	
 	EigenArrayRGB watermarked_image;
@@ -133,7 +134,7 @@ ArrayXXf Watermark::compute_prediction_error_mask(const ArrayXXf& padded_image, 
 ArrayXXf Watermark::calculate_error_sequence(const ArrayXXf& padded, const VectorXf& coefficients) const
 {
 	ArrayXXf error_sequence(rows, cols);
-	const int neighbor_size = (p - 1) / 2;
+	const int neighbor_size = p / 2;
 #pragma omp parallel for
 	for (int i = 0; i < rows; i++) {
 		VectorXf x_(p_squared - 1);
@@ -161,7 +162,7 @@ float Watermark::mask_detector(const ArrayXXf& watermarked_image, MASK_TYPE mask
 		mask = compute_prediction_error_mask(padded, e_z, a_z, ME_MASK_CALCULATION_REQUIRED_YES);
 	
 	padded.block(pad, pad, (padded_rows - pad) - pad, (padded_cols - pad) - pad) = (mask * w);
-	ArrayXXf e_u = calculate_error_sequence(padded, a_z);
+	const ArrayXXf e_u = calculate_error_sequence(padded, a_z);
 	float dot_ez_eu, d_ez, d_eu;
 	
 #pragma omp parallel sections

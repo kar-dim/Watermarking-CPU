@@ -14,9 +14,9 @@ class Watermark {
 private:
 	const EigenArrayRGB image_rgb;
 	const Eigen::ArrayXXf image, w;
-	const int p, p_squared, p_squared_minus_one_div_2, pad, num_threads;
+	const int p, p_squared, half_neighbors_size, pad, num_threads;
 	const Eigen::Index rows, cols, padded_rows, padded_cols;
-	const float psnr;
+	const float strength_factor;
 
 	void create_neighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int neighbor_size, const int i, const int j) const;
 	Eigen::ArrayXXf load_W(const std::string &w_file, const Eigen::Index rows, const Eigen::Index cols) const;
