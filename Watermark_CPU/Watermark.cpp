@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #define ME_MASK_CALCULATION_REQUIRED_NO false
 #define ME_MASK_CALCULATION_REQUIRED_YES true
@@ -52,7 +53,6 @@ void Watermark::createNeighbors(const ArrayXXf& array, VectorXf& x_, const int n
 
 ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& padded) const
 {
-
 	ArrayXXf nvf(rows, cols);
 	const int neighbor_size = (p - 1) / 2;
 #pragma omp parallel for
@@ -77,6 +77,7 @@ ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& pad
 //into a new array based on "outputImage" (RGB)
 EigenArrayRGB Watermark::makeWatermark(const ArrayXXf& inputImage, const EigenArrayRGB& outputImage, MASK_TYPE maskType) 
 {
+
 	padded.block(pad, pad, (paddedRows - pad) - pad, (paddedCols - pad) - pad) = inputImage;
 	ArrayXXf mask;
 	if (maskType == MASK_TYPE::NVF)
@@ -163,10 +164,10 @@ ArrayXXf Watermark::computeErrorSequence(const ArrayXXf& padded, const VectorXf&
 }
 
 //main mask detector for Me and NVF masks
-float Watermark::detectWatermark(const ArrayXXf& watermarkedImage, MASK_TYPE maskType) const
+float Watermark::detectWatermark(const ArrayXXf& watermarkedImage, MASK_TYPE maskType)
 {
 	VectorXf a_z;
-	ArrayXXf mask, e_z, padded = ArrayXXf::Zero(paddedRows, paddedCols);
+	ArrayXXf mask, e_z;
 	padded.block(pad, pad, (paddedRows - pad) - pad, (paddedCols - pad) - pad) = watermarkedImage;
 	if (maskType == MASK_TYPE::NVF) 
 	{
