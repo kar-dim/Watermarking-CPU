@@ -8,7 +8,6 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <iostream>
 
 #define ME_MASK_CALCULATION_REQUIRED_NO false
 #define ME_MASK_CALCULATION_REQUIRED_YES true
@@ -51,6 +50,7 @@ void Watermark::createNeighbors(const ArrayXXf& array, VectorXf& x_, const int n
 	x_(seq(halfNeighborsSize, pSquared - 2)) = x_temp(seq(halfNeighborsSize + 1, pSquared - 1));
 }
 
+//computes the custom mask, in this case "NVF" mask
 ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& padded) const
 {
 	ArrayXXf nvf(rows, cols);
@@ -77,7 +77,6 @@ ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& pad
 //into a new array based on "outputImage" (RGB)
 EigenArrayRGB Watermark::makeWatermark(const ArrayXXf& inputImage, const EigenArrayRGB& outputImage, MASK_TYPE maskType) 
 {
-
 	padded.block(pad, pad, (paddedRows - pad) - pad, (paddedCols - pad) - pad) = inputImage;
 	ArrayXXf mask;
 	if (maskType == MASK_TYPE::NVF)
@@ -168,6 +167,7 @@ float Watermark::detectWatermark(const ArrayXXf& watermarkedImage, MASK_TYPE mas
 {
 	VectorXf a_z;
 	ArrayXXf mask, e_z;
+	//pad by using the preallocated block
 	padded.block(pad, pad, (paddedRows - pad) - pad, (paddedCols - pad) - pad) = watermarkedImage;
 	if (maskType == MASK_TYPE::NVF) 
 	{
