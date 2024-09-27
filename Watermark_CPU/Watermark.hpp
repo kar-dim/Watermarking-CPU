@@ -10,22 +10,25 @@ enum MASK_TYPE {
 };
 
 class Watermark {
-
 private:
-	const EigenArrayRGB image_rgb;
-	const Eigen::ArrayXXf image, w;
-	const int p, p_squared, half_neighbors_size, pad, num_threads;
-	const Eigen::Index rows, cols, padded_rows, padded_cols;
-	const float strength_factor;
+	const Eigen::ArrayXXf randomMatrix;
+	const int p, pSquared, halfNeighborsSize, pad;
+	const Eigen::Index rows, cols, paddedRows, paddedCols;
+	const float strengthFactor;
 
-	void create_neighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int neighbor_size, const int i, const int j) const;
-	Eigen::ArrayXXf load_W(const std::string &w_file, const Eigen::Index rows, const Eigen::Index cols) const;
-	Eigen::ArrayXXf compute_custom_mask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded) const;
-	Eigen::ArrayXXf compute_prediction_error_mask(const Eigen::ArrayXXf& padded_image, Eigen::ArrayXXf& error_sequence, Eigen::VectorXf& coefficients, const bool mask_needed) const;
-	Eigen::ArrayXXf calculate_error_sequence(const Eigen::ArrayXXf& padded, const Eigen::VectorXf& coefficients) const;
+	void createNeighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int neighborSize, const int i, const int j) const;
+	Eigen::ArrayXXf loadRandomMatrix(const std::string wFilePath, const Eigen::Index rows, const Eigen::Index cols) const;
+	Eigen::ArrayXXf computeCustomMask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded) const;
+	Eigen::ArrayXXf computePredictionErrorMask(const Eigen::ArrayXXf& paddedImage, Eigen::ArrayXXf& errorSequence, Eigen::VectorXf& coefficients, const bool maskNeeded) const;
+	Eigen::ArrayXXf computeErrorSequence(const Eigen::ArrayXXf& padded, const Eigen::VectorXf& coefficients) const;
 
 public:
-	Watermark(const EigenArrayRGB& image_rgb, const Eigen::ArrayXXf& image, const std::string &w_file_path, const int p, const float psnr);
-	EigenArrayRGB make_and_add_watermark(MASK_TYPE type) const;
-	float mask_detector(const Eigen::ArrayXXf& watermarked_image, MASK_TYPE type) const;
+	Watermark(const Watermark& other) = delete;
+	Watermark& operator=(const Watermark& other) = delete;
+	Watermark(Watermark&& other) noexcept = delete;
+	Watermark& operator=(Watermark&& other) = delete;
+
+	Watermark(const Eigen::Index rows, const Eigen::Index cols, const std::string wFilePath, const int p, const float psnr);
+	EigenArrayRGB makeWatermark(const Eigen::ArrayXXf& inputImage, const EigenArrayRGB& outputImage, MASK_TYPE type) const;
+	float detectWatermark(const Eigen::ArrayXXf& watermarkedImage, MASK_TYPE type) const;
 };

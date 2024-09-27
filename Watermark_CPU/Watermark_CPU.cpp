@@ -1,18 +1,18 @@
 ﻿#include "cimg_init.hpp"
 #include "eigen_rgb_array.hpp"
-#include "INIReader.h"
 #include "Utilities.hpp"
 #include "Watermark.hpp"
 #include "Watermark_CPU.hpp"
 #include <cstdlib>
 #include <Eigen/Dense>
 #include <exception>
+#include <INIReader.h>
 #include <iomanip>
+#include <ios>
 #include <iostream>
 #include <omp.h>
 #include <string>
 #include <thread>
-#include <ios>
 
 #define R_WEIGHT 0.299f
 #define G_WEIGHT 0.587f
@@ -32,142 +32,155 @@ using std::string;
 int main(int argc, char** argv)
 {
 	const INIReader inir("settings.ini");
-	if (inir.ParseError() < 0) {
+	if (inir.ParseError() < 0) 
+	{
 		cout << "Could not load configuration file, exiting..";
-		exit_program(EXIT_FAILURE);
+		exitProgram(EXIT_FAILURE);
 	}
-	const string image_path = inir.Get("paths", "image", "NO_IMAGE");
-	const bool show_fps = inir.GetBoolean("options", "execution_time_in_fps", false);
+	const string imagePath = inir.Get("paths", "image", "NO_IMAGE");
+	const bool showFps = inir.GetBoolean("options", "execution_time_in_fps", false);
 	const int p = inir.GetInteger("parameters", "p", 5);
 	const float psnr = static_cast<float>(inir.GetReal("parameters", "psnr", 30.0f));
-	const string w_file = inir.Get("paths", "w_path", "w.txt");
-	int num_threads = inir.GetInteger("parameters", "threads", 0);
-	if (num_threads <= 0 || num_threads > 256) {
-		auto threads_supported = std::thread::hardware_concurrency();
-		num_threads = threads_supported == 0 ? 2 : threads_supported;
+	const string wFile = inir.Get("paths", "w_path", "w.txt");
+	int numThreads = inir.GetInteger("parameters", "threads", 0);
+	if (numThreads <= 0 || numThreads > 256) 
+	{
+		auto threadsSupported = std::thread::hardware_concurrency();
+		numThreads = threadsSupported == 0 ? 2 : threadsSupported;
 	}
 	int loops = inir.GetInteger("parameters", "loops_for_test", 5); 
 	loops = loops <= 0 || loops > 64 ? 5 : loops;
 
 	//openmp initialization
-	omp_set_num_threads(num_threads);
+	omp_set_num_threads(numThreads);
 #pragma omp parallel for
 	for (int i = 0; i < 24; i++) {}
 
-	const CImg<float> rgb_image_cimg(image_path.c_str());
-	const int rows = rgb_image_cimg.height();
-	const int cols = rgb_image_cimg.width();
+	const CImg<float> rgbImageCimg(imagePath.c_str());
+	const int rows = rgbImageCimg.height();
+	const int cols = rgbImageCimg.width();
 
-	if (cols <= 16 || rows <= 16 || rows >= 16384 || cols >= 16384) {
+	if (cols <= 16 || rows <= 16 || rows >= 16384 || cols >= 16384) 
+	{
 		cout << "Image dimensions too low or too high\n";
-		exit_program(EXIT_FAILURE);
+		exitProgram(EXIT_FAILURE);
 	}
-	if (p <= 1 || p % 2 != 1 || p > 9) {
+	if (p <= 1 || p % 2 != 1 || p > 9) 
+	{
 		cout << "p parameter must be a positive odd number greater than or equal to 3 and less than or equal to 9\n";
-		exit_program(EXIT_FAILURE);
+		exitProgram(EXIT_FAILURE);
 	}
-	if (psnr <= 0) {
+	if (psnr <= 0) 
+	{
 		cout << "PSNR must be a positive number\n";
-		exit_program(EXIT_FAILURE);
+		exitProgram(EXIT_FAILURE);
 	}
 
-	cout << "Using " << num_threads << " parallel threads.\n";
+	cout << "Using " << numThreads << " parallel threads.\n";
 	cout << "Each test will be executed " << loops << " times. Average time will be shown below\n";
 	cout << "Image size is: " << rows << " rows and " << cols << " columns\n\n";
 
 	//copy from cimg to Eigen
 	timer::start();
-	const EigenArrayRGB array_rgb = cimg_to_eigen_rgb_array(rgb_image_cimg);
-	const ArrayXXf array_grayscale = eigen_rgb_array_to_grayscale_array(array_rgb, R_WEIGHT, G_WEIGHT, B_WEIGHT);
+	const EigenArrayRGB arrayRgb = CimgToEigen3dArray(rgbImageCimg);
+	const ArrayXXf arrayGrayscale = Eigen3dArrayToGrayscaleArray(arrayRgb, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 	timer::end();
-	cout << "Time to load image from disk and initialize CImg and Eigen memory objects: " << timer::secs_passed() << " seconds\n\n";
+	cout << "Time to load image from disk and initialize CImg and Eigen memory objects: " << timer::elapsedSeconds() << " seconds\n\n";
 	
 	//tests begin
 	try {
 		//initialize main class responsible for watermarking and detection
-		Watermark watermark_obj(array_rgb, array_grayscale, w_file, p, psnr);
+		Watermark watermarkObj(rows, cols, wFile, p, psnr);
 
 		double secs = 0;
 		//NVF mask calculation
-		EigenArrayRGB watermark_NVF, watermark_ME;
-		for (int i = 0; i < loops; i++) {
+		EigenArrayRGB watermarkNVF, watermarkME;
+		for (int i = 0; i < loops; i++) 
+		{
 			timer::start();
-			watermark_NVF = watermark_obj.make_and_add_watermark(MASK_TYPE::NVF);
+			watermarkNVF = watermarkObj.makeWatermark(arrayGrayscale, arrayRgb, MASK_TYPE::NVF);
 			timer::end();
-			secs += timer::secs_passed();
+			secs += timer::elapsedSeconds();
 		}
-		cout << "Calculation of NVF mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(show_fps, secs / loops) << "\n\n";
+		cout << "Calculation of NVF mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(showFps, secs / loops) << "\n\n";
 		
 		secs = 0;
 		//Prediction error mask calculation
-		for (int i = 0; i < loops; i++) {
+		for (int i = 0; i < loops; i++) 
+		{
 			timer::start();
-			watermark_ME = watermark_obj.make_and_add_watermark(MASK_TYPE::ME);
+			watermarkME = watermarkObj.makeWatermark(arrayGrayscale, arrayRgb, MASK_TYPE::ME);
 			timer::end();
-			secs += timer::secs_passed();
+			secs += timer::elapsedSeconds();
 		}
-		cout << "Calculation of ME mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(show_fps, secs / loops) << "\n\n";
+		cout << "Calculation of ME mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(showFps, secs / loops) << "\n\n";
 
-		const ArrayXXf watermarked_NVF_gray = eigen_rgb_array_to_grayscale_array(watermark_NVF, R_WEIGHT, G_WEIGHT, B_WEIGHT);
-		const ArrayXXf watermarked_ME_gray = eigen_rgb_array_to_grayscale_array(watermark_ME, R_WEIGHT, G_WEIGHT, B_WEIGHT);
+		const ArrayXXf watermarkedNVFgray = Eigen3dArrayToGrayscaleArray(watermarkNVF, R_WEIGHT, G_WEIGHT, B_WEIGHT);
+		const ArrayXXf watermarkedMEgray = Eigen3dArrayToGrayscaleArray(watermarkME, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 
-		float correlation_nvf, correlation_me;
+		float correlationNvf, correlationMe;
 		secs = 0;
 		//NVF mask detection
-		for (int i = 0; i < loops; i++) {
+		for (int i = 0; i < loops; i++) 
+		{
 			timer::start();
-			correlation_nvf = watermark_obj.mask_detector(watermarked_NVF_gray, MASK_TYPE::NVF);
+			correlationNvf = watermarkObj.detectWatermark(watermarkedNVFgray, MASK_TYPE::NVF);
 			timer::end();
-			secs += timer::secs_passed();
+			secs += timer::elapsedSeconds();
 		}
-		cout << "Calculation of the watermark correlation (NVF) of an image with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(show_fps, secs / loops) << "\n\n";
+		cout << "Calculation of the watermark correlation (NVF) of an image with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(showFps, secs / loops) << "\n\n";
 
 		secs = 0;
 		//Prediction error mask detection
-		for (int i = 0; i < loops; i++) {
+		for (int i = 0; i < loops; i++) 
+		{
 			timer::start();
-			correlation_me = watermark_obj.mask_detector(watermarked_ME_gray, MASK_TYPE::ME);
+			correlationMe = watermarkObj.detectWatermark(watermarkedMEgray, MASK_TYPE::ME);
 			timer::end();
-			secs += timer::secs_passed();
+			secs += timer::elapsedSeconds();
 		}
-		cout << "Calculation of the watermark correlation (ME) of an image with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(show_fps, secs / loops) << "\n\n";
+		cout << "Calculation of the watermark correlation (ME) of an image with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(showFps, secs / loops) << "\n\n";
 
-		cout << "Correlation [NVF]: " << std::fixed << std::setprecision(16) << correlation_nvf << "\n";
-		cout << "Correlation [ME]: " << std::fixed << std::setprecision(16) << correlation_me << "\n";
+		cout << "Correlation [NVF]: " << std::fixed << std::setprecision(16) << correlationNvf << "\n";
+		cout << "Correlation [ME]: " << std::fixed << std::setprecision(16) << correlationMe << "\n";
 
 		//save watermarked images to disk
-		if (inir.GetBoolean("options", "save_watermarked_files_to_disk", false)) {
+		if (inir.GetBoolean("options", "save_watermarked_files_to_disk", false)) 
+		{
 			cout << "\nSaving watermarked files to disk...\n";
 #pragma omp parallel sections 
 			{
 #pragma omp section
-				save_watermarked_image(image_path, "_W_NVF", watermark_NVF);
+				saveWatermarkedImage(imagePath, "_W_NVF", watermarkNVF);
 #pragma omp section
-				save_watermarked_image(image_path, "_W_ME", watermark_ME);
+				saveWatermarkedImage(imagePath, "_W_ME", watermarkME);
 			}
 			cout << "Successully saved to disk\n";
 		}
 	}
 	catch (const std::exception& e) {
 		cout << e.what() << "\n";
-		exit_program(EXIT_FAILURE);
+		exitProgram(EXIT_FAILURE);
 	}
-	exit_program(EXIT_SUCCESS);
+	exitProgram(EXIT_SUCCESS);
 }
 
 //calculate execution time in seconds, or show FPS value
-string execution_time(const bool show_fps, const double seconds) {
-	return string(show_fps ? std::to_string(1 / seconds) + " FPS." : std::to_string(seconds) + " seconds.");
+string execution_time(const bool showFps, const double seconds) 
+{
+	return string(showFps ? std::to_string(1 / seconds) + " FPS." : std::to_string(seconds) + " seconds.");
 }
 
 //save the provided Eigen RGB array containing a watermarked image to disk
-void save_watermarked_image(const string& image_path, const string& suffix, const EigenArrayRGB& watermark) {
-	std::string watermarked_file = add_suffix_before_extension(image_path, suffix);
-	eigen_rgb_array_to_cimg(watermark).save_png(watermarked_file.c_str());
+void saveWatermarkedImage(const string& imagePath, const string& suffix, const EigenArrayRGB& watermark) 
+{
+	std::string watermarked_file = addSuffixBeforeExtension(imagePath, suffix);
+	Eigen3dArrayToCimg(watermark).save_png(watermarked_file.c_str());
 }
 
 //exits the program with the provided exit code
-void exit_program(const int exit_code) {
+void exitProgram(const int exitCode) 
+{
 	std::system("pause");
-	std::exit(exit_code);
+	std::exit(exitCode);
 }

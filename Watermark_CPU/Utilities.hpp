@@ -5,14 +5,15 @@
 #include <Eigen/Dense>
 #include <string>
 
-std::string add_suffix_before_extension(const std::string& file, const std::string& suffix);
-cimg_library::CImg<float> eigen_rgb_array_to_cimg(const EigenArrayRGB& image_rgb);
-EigenArrayRGB cimg_to_eigen_rgb_array(const cimg_library::CImg<float>& rgb_image);
-Eigen::ArrayXXf eigen_rgb_array_to_grayscale_array(const EigenArrayRGB& image_rgb, const float r_weight, const float g_weight, const float b_weight);
+std::string addSuffixBeforeExtension(const std::string& file, const std::string& suffix);
+cimg_library::CImg<float> Eigen3dArrayToCimg(const EigenArrayRGB& imageRgb);
+EigenArrayRGB CimgToEigen3dArray(const cimg_library::CImg<float>& rgbImage);
+Eigen::ArrayXXf Eigen3dArrayToGrayscaleArray(const EigenArrayRGB& imageRgb, const float rWeight, const float gWeight, const float bWeight);
 
-namespace timer {
-	static std::chrono::time_point<std::chrono::steady_clock> start_timex, cur_timex;
+namespace timer 
+{
+	static std::chrono::time_point<std::chrono::steady_clock> startTime, currentTime;
 	void start();
 	void end();
-	double secs_passed();
+	double elapsedSeconds();
 }

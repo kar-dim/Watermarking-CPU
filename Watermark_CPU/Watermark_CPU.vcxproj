@@ -52,7 +52,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Watermark_CPU\libs\Eigen;$(SolutionDir)Watermark_CPU\libs\CImg-3.2.2;$(SolutionDir)Watermark_CPU\libs\zlib\include;$(LLVMInstallDir)\lib\clang\17\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Watermark_CPU\libs\Eigen;$(SolutionDir)Watermark_CPU\libs\CImg-3.2.2;$(SolutionDir)Watermark_CPU\libs\zlib\include;$(LLVMInstallDir)\lib\clang\17\include;$(SolutionDir)Watermark_CPU\libs\inih;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Fast</FloatingPointModel>
       <AdditionalOptions>-openmp -mavx2 -mfma %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -74,7 +74,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Watermark_CPU\libs\Eigen;$(SolutionDir)Watermark_CPU\libs\CImg-3.2.2;$(SolutionDir)Watermark_CPU\libs\zlib\include;$(LLVMInstallDir)\lib\clang\17\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Watermark_CPU\libs\Eigen;$(SolutionDir)Watermark_CPU\libs\CImg-3.2.2;$(SolutionDir)Watermark_CPU\libs\zlib\include;$(LLVMInstallDir)\lib\clang\17\include;$(SolutionDir)Watermark_CPU\libs\inih;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Fast</FloatingPointModel>
       <AdditionalOptions>-openmp -mavx2 -mfma /clang:-O3 %(AdditionalOptions)</AdditionalOptions>
       <OpenMPSupport>true</OpenMPSupport>
@@ -102,7 +102,6 @@
   <ItemGroup>
     <ClInclude Include="cimg_init.hpp" />
     <ClInclude Include="eigen_rgb_array.hpp" />
-    <ClInclude Include="INIReader.h" />
     <ClInclude Include="Utilities.hpp" />
     <ClInclude Include="Watermark.hpp" />
     <ClInclude Include="Watermark_CPU.hpp" />

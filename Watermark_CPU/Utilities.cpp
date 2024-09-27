@@ -10,14 +10,16 @@ using namespace Eigen;
 
 using std::string;
 
-string add_suffix_before_extension(const string& file, const string& suffix) {
+string addSuffixBeforeExtension(const string& file, const string& suffix) 
+{
 	auto dot = file.find_last_of('.');
 	return dot == string::npos ? file + suffix : file.substr(0, dot) + suffix + file.substr(dot);
 }
 
-CImg<float> eigen_rgb_array_to_cimg(const EigenArrayRGB& array_rgb) {
-	const auto rows = array_rgb[0].rows();
-	const auto cols = array_rgb[0].cols();
+CImg<float> Eigen3dArrayToCimg(const EigenArrayRGB& arrayRgb) 
+{
+	const auto rows = arrayRgb[0].rows();
+	const auto cols = arrayRgb[0].cols();
 	CImg<float> cimg_image(static_cast<unsigned int>(cols), static_cast<unsigned int>(rows), 1, 3);
 	//a parallel pixel by pixel copy for loop is faster instead of three parallel (channel) bulk memory copies
 	//because cimg and eigen use different memory layouts, and transposing is required which would make the copy much slower
@@ -25,37 +27,43 @@ CImg<float> eigen_rgb_array_to_cimg(const EigenArrayRGB& array_rgb) {
 	for (int y = 0; y < rows; ++y)
 		for (int x = 0; x < cols; ++x)
 			for (int channel = 0; channel < 3; channel++)
-				cimg_image(x, y, 0, channel) = array_rgb[channel](y, x);
+				cimg_image(x, y, 0, channel) = arrayRgb[channel](y, x);
 	return cimg_image;
 }
 
-EigenArrayRGB cimg_to_eigen_rgb_array(const CImg<float>& rgb_image) {
-	const int rows = rgb_image.height();
-	const int cols = rgb_image.width();
+EigenArrayRGB CimgToEigen3dArray(const CImg<float>& rgbImage) 
+{
+	const int rows = rgbImage.height();
+	const int cols = rgbImage.width();
 	//a parallel pixel by pixel copy for loop is faster instead of three parallel (channel) bulk memory copies
 	//because cimg and eigen use different memory layouts, and transposing is required which would make the copy much slower
 	EigenArrayRGB rgb_array = { ArrayXXf(rows,cols), ArrayXXf(rows,cols), ArrayXXf(rows, cols) };
 #pragma omp parallel for
-	for (int y = 0; y < rgb_image.height(); y++)
-		for (int x = 0; x < rgb_image.width(); x++)
+	for (int y = 0; y < rgbImage.height(); y++)
+		for (int x = 0; x < rgbImage.width(); x++)
 			for (int channel = 0; channel < 3; channel++)
-				rgb_array[channel](y,x) = rgb_image(x, y, 0, channel);
+				rgb_array[channel](y,x) = rgbImage(x, y, 0, channel);
 	return rgb_array;
 }
 
-ArrayXXf eigen_rgb_array_to_grayscale_array(const EigenArrayRGB& array_rgb, const float r_weight, const float g_weight, const float b_weight) {
-	return (array_rgb[0] * r_weight) + (array_rgb[1] * g_weight) + (array_rgb[2] * b_weight);
+ArrayXXf Eigen3dArrayToGrayscaleArray(const EigenArrayRGB& arrayRgb, const float rWeight, const float gWeight, const float bWeight) 
+{
+	return (arrayRgb[0] * rWeight) + (arrayRgb[1] * gWeight) + (arrayRgb[2] * bWeight);
 }
 
 //χρονομέτρηση
-namespace timer {
-	void start() {
-		start_timex = std::chrono::high_resolution_clock::now();
+namespace timer 
+{
+	void start() 
+	{
+		startTime = std::chrono::high_resolution_clock::now();
 	}
-	void end() {
-		cur_timex = std::chrono::high_resolution_clock::now();
+	void end() 
+	{
+		currentTime = std::chrono::high_resolution_clock::now();
 	}
-	double secs_passed() {
-		return (double)std::chrono::duration_cast<std::chrono::microseconds>(cur_timex - start_timex).count() / 1000000;
+	double elapsedSeconds() 
+	{
+		return (double)std::chrono::duration_cast<std::chrono::microseconds>(currentTime - startTime).count() / 1000000;
 	}
 }
