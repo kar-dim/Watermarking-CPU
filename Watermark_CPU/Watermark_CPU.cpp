@@ -82,8 +82,8 @@ int main(int argc, char** argv)
 
 	//copy from cimg to Eigen
 	timer::start();
-	const EigenArrayRGB arrayRgb = CimgToEigen3dArray(rgbImageCimg);
-	const ArrayXXf arrayGrayscale = Eigen3dArrayToGrayscaleArray(arrayRgb, R_WEIGHT, G_WEIGHT, B_WEIGHT);
+	const EigenArrayRGB arrayRgb = cimgToEigen3dArray(rgbImageCimg);
+	const ArrayXXf arrayGrayscale = eigen3dArrayToGrayscaleArray(arrayRgb, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 	timer::end();
 	cout << "Time to load image from disk and initialize CImg and Eigen memory objects: " << timer::elapsedSeconds() << " seconds\n\n";
 	
@@ -115,8 +115,8 @@ int main(int argc, char** argv)
 		}
 		cout << "Calculation of ME mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(showFps, secs / loops) << "\n\n";
 
-		const ArrayXXf watermarkedNVFgray = Eigen3dArrayToGrayscaleArray(watermarkNVF, R_WEIGHT, G_WEIGHT, B_WEIGHT);
-		const ArrayXXf watermarkedMEgray = Eigen3dArrayToGrayscaleArray(watermarkME, R_WEIGHT, G_WEIGHT, B_WEIGHT);
+		const ArrayXXf watermarkedNVFgray = eigen3dArrayToGrayscaleArray(watermarkNVF, R_WEIGHT, G_WEIGHT, B_WEIGHT);
+		const ArrayXXf watermarkedMEgray = eigen3dArrayToGrayscaleArray(watermarkME, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 
 		float correlationNvf, correlationMe;
 		secs = 0;
@@ -175,7 +175,7 @@ string execution_time(const bool showFps, const double seconds)
 void saveWatermarkedImage(const string& imagePath, const string& suffix, const EigenArrayRGB& watermark) 
 {
 	std::string watermarked_file = addSuffixBeforeExtension(imagePath, suffix);
-	Eigen3dArrayToCimg(watermark).save_png(watermarked_file.c_str());
+	eigen3dArrayToCimg(watermark).save_png(watermarked_file.c_str());
 }
 
 //exits the program with the provided exit code

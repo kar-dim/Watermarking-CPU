@@ -4,7 +4,8 @@
 #include <Eigen/Dense>
 #include <string>
 
-enum MASK_TYPE {
+enum MASK_TYPE 
+{
 	ME,
 	NVF
 };

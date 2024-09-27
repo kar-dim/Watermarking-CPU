@@ -6,9 +6,9 @@
 #include <string>
 
 std::string addSuffixBeforeExtension(const std::string& file, const std::string& suffix);
-cimg_library::CImg<float> Eigen3dArrayToCimg(const EigenArrayRGB& imageRgb);
-EigenArrayRGB CimgToEigen3dArray(const cimg_library::CImg<float>& rgbImage);
-Eigen::ArrayXXf Eigen3dArrayToGrayscaleArray(const EigenArrayRGB& imageRgb, const float rWeight, const float gWeight, const float bWeight);
+cimg_library::CImg<float> eigen3dArrayToCimg(const EigenArrayRGB& imageRgb);
+EigenArrayRGB cimgToEigen3dArray(const cimg_library::CImg<float>& rgbImage);
+Eigen::ArrayXXf eigen3dArrayToGrayscaleArray(const EigenArrayRGB& imageRgb, const float rWeight, const float gWeight, const float bWeight);
 
 namespace timer 
 {

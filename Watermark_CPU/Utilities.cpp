@@ -16,7 +16,7 @@ string addSuffixBeforeExtension(const string& file, const string& suffix)
 	return dot == string::npos ? file + suffix : file.substr(0, dot) + suffix + file.substr(dot);
 }
 
-CImg<float> Eigen3dArrayToCimg(const EigenArrayRGB& arrayRgb) 
+CImg<float> eigen3dArrayToCimg(const EigenArrayRGB& arrayRgb) 
 {
 	const auto rows = arrayRgb[0].rows();
 	const auto cols = arrayRgb[0].cols();
@@ -31,7 +31,7 @@ CImg<float> Eigen3dArrayToCimg(const EigenArrayRGB& arrayRgb)
 	return cimg_image;
 }
 
-EigenArrayRGB CimgToEigen3dArray(const CImg<float>& rgbImage) 
+EigenArrayRGB cimgToEigen3dArray(const CImg<float>& rgbImage) 
 {
 	const int rows = rgbImage.height();
 	const int cols = rgbImage.width();
@@ -46,7 +46,7 @@ EigenArrayRGB CimgToEigen3dArray(const CImg<float>& rgbImage)
 	return rgb_array;
 }
 
-ArrayXXf Eigen3dArrayToGrayscaleArray(const EigenArrayRGB& arrayRgb, const float rWeight, const float gWeight, const float bWeight) 
+ArrayXXf eigen3dArrayToGrayscaleArray(const EigenArrayRGB& arrayRgb, const float rWeight, const float gWeight, const float bWeight) 
 {
 	return (arrayRgb[0] * rWeight) + (arrayRgb[1] * gWeight) + (arrayRgb[2] * bWeight);
 }
