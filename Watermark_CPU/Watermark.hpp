@@ -15,6 +15,7 @@ private:
 	const Eigen::ArrayXXf randomMatrix;
 	const int p, pSquared, halfNeighborsSize, pad;
 	const Eigen::Index rows, cols, paddedRows, paddedCols;
+	Eigen::ArrayXXf padded;
 	const float strengthFactor;
 
 	void createNeighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int neighborSize, const int i, const int j) const;
@@ -30,6 +31,6 @@ public:
 	Watermark& operator=(Watermark&& other) = delete;
 
 	Watermark(const Eigen::Index rows, const Eigen::Index cols, const std::string wFilePath, const int p, const float psnr);
-	EigenArrayRGB makeWatermark(const Eigen::ArrayXXf& inputImage, const EigenArrayRGB& outputImage, MASK_TYPE type) const;
+	EigenArrayRGB makeWatermark(const Eigen::ArrayXXf& inputImage, const EigenArrayRGB& outputImage, MASK_TYPE type);
 	float detectWatermark(const Eigen::ArrayXXf& watermarkedImage, MASK_TYPE type) const;
 };

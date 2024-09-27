@@ -18,7 +18,7 @@ using std::string;
 //constructor to initialize all the necessary data
 Watermark::Watermark(const Eigen::Index rows, const Eigen::Index cols, const string wFilePath, const int p, const float psnr)
 	: randomMatrix(loadRandomMatrix(wFilePath, rows, cols)), p(p), pSquared(static_cast<int>(std::pow(p, 2))), halfNeighborsSize((pSquared - 1) / 2),
-	pad(p / 2), rows(rows), cols(cols), paddedRows(rows + 2 * pad), paddedCols(cols + 2 * pad), strengthFactor((255.0f / sqrt(pow(10.0f, psnr / 10.0f)))) 
+	pad(p / 2), rows(rows), cols(cols), paddedRows(rows + 2 * pad), paddedCols(cols + 2 * pad), padded(ArrayXXf::Zero(paddedRows, paddedCols)), strengthFactor((255.0f / sqrt(pow(10.0f, psnr / 10.0f))))
 { }
 
 //helper method to load the random noise matrix W from the file specified.
@@ -52,6 +52,7 @@ void Watermark::createNeighbors(const ArrayXXf& array, VectorXf& x_, const int n
 
 ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& padded) const
 {
+
 	ArrayXXf nvf(rows, cols);
 	const int neighbor_size = (p - 1) / 2;
 #pragma omp parallel for
@@ -74,9 +75,8 @@ ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& pad
 //Main watermark embedding method
 //it embeds the watermark computed fom "inputImage" (always grayscale)
 //into a new array based on "outputImage" (RGB)
-EigenArrayRGB Watermark::makeWatermark(const ArrayXXf& inputImage, const EigenArrayRGB& outputImage, MASK_TYPE maskType) const 
+EigenArrayRGB Watermark::makeWatermark(const ArrayXXf& inputImage, const EigenArrayRGB& outputImage, MASK_TYPE maskType) 
 {
-	ArrayXXf padded = ArrayXXf::Zero(paddedRows, paddedCols);
 	padded.block(pad, pad, (paddedRows - pad) - pad, (paddedCols - pad) - pad) = inputImage;
 	ArrayXXf mask;
 	if (maskType == MASK_TYPE::NVF)
