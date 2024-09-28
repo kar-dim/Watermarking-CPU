@@ -12,11 +12,11 @@ enum MASK_TYPE
 
 class Watermark {
 private:
-	const Eigen::ArrayXXf randomMatrix;
-	const int p, pSquared, halfNeighborsSize, pad;
-	const Eigen::Index rows, cols, paddedRows, paddedCols;
+	Eigen::ArrayXXf randomMatrix;
+	int p, pSquared, halfNeighborsSize, pad;
+	Eigen::Index rows, cols, paddedRows, paddedCols;
 	Eigen::ArrayXXf padded;
-	const float strengthFactor;
+	float strengthFactor;
 
 	void createNeighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int neighborSize, const int i, const int j) const;
 	Eigen::ArrayXXf loadRandomMatrix(const std::string wFilePath, const Eigen::Index rows, const Eigen::Index cols) const;
@@ -25,11 +25,10 @@ private:
 	Eigen::ArrayXXf computeErrorSequence(const Eigen::ArrayXXf& padded, const Eigen::VectorXf& coefficients) const;
 
 public:
-	Watermark(const Watermark& other) = delete;
-	Watermark& operator=(const Watermark& other) = delete;
-	Watermark(Watermark&& other) noexcept = delete;
-	Watermark& operator=(Watermark&& other) = delete;
-
+	Watermark(const Watermark& other);
+	Watermark& operator=(const Watermark& other);
+	Watermark(Watermark&& other) noexcept;
+	Watermark& operator=(Watermark&& other) noexcept;
 	Watermark(const Eigen::Index rows, const Eigen::Index cols, const std::string wFilePath, const int p, const float psnr);
 	EigenArrayRGB makeWatermark(const Eigen::ArrayXXf& inputImage, const EigenArrayRGB& outputImage, MASK_TYPE type);
 	float detectWatermark(const Eigen::ArrayXXf& watermarkedImage, MASK_TYPE type);

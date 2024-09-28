@@ -7,6 +7,7 @@
 #include <omp.h>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #define ME_MASK_CALCULATION_REQUIRED_NO false
@@ -16,10 +17,59 @@ using namespace Eigen;
 using std::string;
 
 //constructor to initialize all the necessary data
-Watermark::Watermark(const Eigen::Index rows, const Eigen::Index cols, const string wFilePath, const int p, const float psnr)
-	: randomMatrix(loadRandomMatrix(wFilePath, rows, cols)), p(p), pSquared(static_cast<int>(std::pow(p, 2))), halfNeighborsSize((pSquared - 1) / 2),
+Watermark::Watermark(const Eigen::Index rows, const Eigen::Index cols, const string wFilePath, const int p, const float psnr) : 
+	randomMatrix(loadRandomMatrix(wFilePath, rows, cols)), p(p), pSquared(p * p), halfNeighborsSize((pSquared - 1) / 2),
 	pad(p / 2), rows(rows), cols(cols), paddedRows(rows + 2 * pad), paddedCols(cols + 2 * pad), padded(ArrayXXf::Zero(paddedRows, paddedCols)), strengthFactor((255.0f / sqrt(pow(10.0f, psnr / 10.0f))))
 { }
+
+//copy constructor
+Watermark::Watermark(const Watermark& other) : 
+	randomMatrix(other.randomMatrix), p(other.p), pSquared(p * p), halfNeighborsSize((pSquared - 1) / 2),
+	pad(p / 2), rows(other.rows), cols(other.cols), paddedRows(rows + 2 * pad), paddedCols(cols + 2 * pad), padded(ArrayXXf::Zero(paddedRows, paddedCols)), strengthFactor(other.strengthFactor)
+{ }
+
+//copy assignment operator
+Watermark& Watermark::operator=(const Watermark& other)
+{
+	if (this != &other) {
+		randomMatrix = other.randomMatrix;
+		p = other.p;
+		pSquared = p * p;
+		halfNeighborsSize = (pSquared - 1) / 2;
+		pad = p / 2;
+		rows = other.rows;
+		cols = other.cols;
+		paddedRows = rows + 2 * pad;
+		paddedCols = cols + 2 * pad;
+		padded = ArrayXXf::Zero(paddedRows, paddedCols);
+		strengthFactor = other.strengthFactor;
+	}
+	return *this;
+}
+
+//move constructor
+Watermark::Watermark(Watermark&& other) noexcept : randomMatrix(std::move(other.randomMatrix)), p(other.p), pSquared(p * p), halfNeighborsSize((pSquared - 1) / 2),
+pad(p / 2), rows(other.rows), cols(other.cols), paddedRows(rows + 2 * pad), paddedCols(cols + 2 * pad), padded(std::move(other.padded)), strengthFactor(other.strengthFactor)
+{ }
+
+//move assignment operator
+Watermark& Watermark::operator=(Watermark&& other) noexcept
+{
+	if (this != &other) {
+		randomMatrix = std::move(other.randomMatrix);
+		p = other.p;
+		pSquared = p * p;
+		halfNeighborsSize = (pSquared - 1) / 2;
+		pad = p / 2;
+		rows = other.rows;
+		cols = other.cols;
+		paddedRows = rows + 2 * pad;
+		paddedCols = cols + 2 * pad;
+		padded = std::move(other.padded);
+		strengthFactor = other.strengthFactor;
+	}
+	return *this;
+}
 
 //helper method to load the random noise matrix W from the file specified.
 ArrayXXf Watermark::loadRandomMatrix(const string wFilePath, const Index rows, const Index cols) const 
