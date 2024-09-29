@@ -25,11 +25,11 @@ private:
 	Eigen::ArrayXXf computeErrorSequence(const Eigen::ArrayXXf& padded, const Eigen::VectorXf& coefficients) const;
 
 public:
-	Watermark(const Watermark& other);
-	Watermark& operator=(const Watermark& other);
-	Watermark(Watermark&& other) noexcept;
-	Watermark& operator=(Watermark&& other) noexcept;
 	Watermark(const Eigen::Index rows, const Eigen::Index cols, const std::string wFilePath, const int p, const float psnr);
+	Watermark(const Watermark& other) = default;
+	Watermark& operator=(const Watermark& other) = default;
+	Watermark(Watermark&& other) noexcept = default;
+	Watermark& operator=(Watermark&& other) noexcept = default;
 	EigenArrayRGB makeWatermark(const Eigen::ArrayXXf& inputImage, const EigenArrayRGB& outputImage, MASK_TYPE type);
 	float detectWatermark(const Eigen::ArrayXXf& watermarkedImage, MASK_TYPE type);
 };

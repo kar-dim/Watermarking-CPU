@@ -2,7 +2,7 @@
 #include "eigen_rgb_array.hpp"
 #include "Utilities.hpp"
 #include "Watermark.hpp"
-#include "Watermark_CPU.hpp"
+#include "main_utils.hpp"
 #include <cstdlib>
 #include <Eigen/Dense>
 #include <exception>

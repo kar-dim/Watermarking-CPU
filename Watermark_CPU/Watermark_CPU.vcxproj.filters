@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Watermark_CPU.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Utilities.cpp">
@@ -35,7 +35,7 @@
     <ClInclude Include="Watermark.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Watermark_CPU.hpp">
+    <ClInclude Include="main_utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="cimg_init.hpp">
