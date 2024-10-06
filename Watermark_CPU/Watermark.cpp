@@ -83,19 +83,19 @@ EigenArrayRGB Watermark::makeWatermark(const ArrayXXf& inputImage, const EigenAr
 		mask = computeCustomMask(inputImage, padded);
 	else 
 	{
-		ArrayXXf error_sequence;
+		ArrayXXf errorSequence;
 		VectorXf coefficients;
-		mask = computePredictionErrorMask(padded, error_sequence, coefficients, ME_MASK_CALCULATION_REQUIRED_YES);
+		mask = computePredictionErrorMask(padded, errorSequence, coefficients, ME_MASK_CALCULATION_REQUIRED_YES);
 	}
 	const ArrayXXf u = mask * randomMatrix;
 	const float a = strengthFactor / sqrt(u.square().sum() / (rows * cols));
-	const ArrayXXf u_strength = u * a;
+	const ArrayXXf uStrength = u * a;
 	
-	EigenArrayRGB watermarked_image;
+	EigenArrayRGB watermarkedImage;
 #pragma omp parallel for
 	for (int channel = 0; channel < 3; channel++)
-		watermarked_image[channel] = (outputImage[channel] + u_strength).cwiseMax(0).cwiseMin(255);
-	return watermarked_image;
+		watermarkedImage[channel] = (outputImage[channel] + uStrength).cwiseMax(0).cwiseMin(255);
+	return watermarkedImage;
 }
 
 //compute Prediction error mask
