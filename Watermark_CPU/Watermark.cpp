@@ -7,7 +7,6 @@
 #include <omp.h>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
 #include <vector>
 
 #define ME_MASK_CALCULATION_REQUIRED_NO false
@@ -41,11 +40,11 @@ ArrayXXf Watermark::loadRandomMatrix(const string wFilePath, const Index rows, c
 //generate p x p neighbors
 void Watermark::createNeighbors(const ArrayXXf& array, VectorXf& x_, const int neighborSize, const int i, const int j) const
 {
-	const int start_row = i - neighborSize;
-	const int start_col = j - neighborSize;
-	const int end_row = i + neighborSize;
-	const int end_col = j + neighborSize;
-	const auto x_temp = array.block(start_row, start_col, end_row - start_row + 1, end_col - start_col + 1).reshaped();
+	const int startRow = i - neighborSize;
+	const int startCol = j - neighborSize;
+	const int endRow = i + neighborSize;
+	const int endCol = j + neighborSize;
+	const auto x_temp = array.block(startRow, startCol, endRow - startRow + 1, endCol - startCol + 1).reshaped();
 	//ignore the central pixel value
 	x_(seq(0, halfNeighborsSize - 1)) = x_temp(seq(0, halfNeighborsSize - 1));
 	x_(seq(halfNeighborsSize, pSquared - 2)) = x_temp(seq(halfNeighborsSize + 1, pSquared - 1));
@@ -55,17 +54,17 @@ void Watermark::createNeighbors(const ArrayXXf& array, VectorXf& x_, const int n
 ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& padded) const
 {
 	ArrayXXf nvf(rows, cols);
-	const int neighbor_size = (p - 1) / 2;
+	const int neighborsSize = (p - 1) / 2;
 #pragma omp parallel for
 	for (int i = pad; i < rows + pad; i++) 
 	{
 		for (int j = pad; j < cols + pad; j++) 
 		{
-			const int start_row = i - neighbor_size;
-			const int end_row = i + neighbor_size;
-			const int start_col = j - neighbor_size;
-			const int end_col = j + neighbor_size;
-			const auto neighb = padded.block(start_row, start_col, end_row - start_row + 1, end_col - start_col + 1);
+			const int startRow = i - neighborsSize;
+			const int endRow = i + neighborsSize;
+			const int startCol = j - neighborsSize;
+			const int endCol = j + neighborsSize;
+			const auto neighb = padded.block(startRow, startCol, endRow - startRow + 1, endCol - startCol + 1);
 			const float variance = (neighb - neighb.mean()).matrix().squaredNorm() / (pSquared - 1);
 			nvf(i - pad, j - pad) = variance / (1.0f + variance);
 		}
@@ -78,7 +77,7 @@ ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& pad
 //into a new array based on "outputImage" (RGB)
 EigenArrayRGB Watermark::makeWatermark(const ArrayXXf& inputImage, const EigenArrayRGB& outputImage, MASK_TYPE maskType) 
 {
-	padded.block(pad, pad, (paddedRows - pad) - pad, (paddedCols - pad) - pad) = inputImage;
+	padded.block(pad, pad, inputImage.rows(), inputImage.cols()) = inputImage;
 	ArrayXXf mask;
 	if (maskType == MASK_TYPE::NVF)
 		mask = computeCustomMask(inputImage, padded);
@@ -112,7 +111,7 @@ ArrayXXf Watermark::computePredictionErrorMask(const ArrayXXf& paddedImage, Arra
 		Rx_all[i] = Rx;
 		rx_all[i] = rx;
 	}
-	const int neighbor_size = (p - 1) / 2;
+	const int neighborsSize = (p - 1) / 2;
 #pragma omp parallel for
 	for (int i = pad; i < rows + pad; i++) 
 	{
@@ -120,7 +119,7 @@ ArrayXXf Watermark::computePredictionErrorMask(const ArrayXXf& paddedImage, Arra
 		for (int j = pad; j < cols + pad; j++) 
 		{
 			//calculate p^2 - 1 neighbors
-			createNeighbors(paddedImage, x_, neighbor_size, i, j);
+			createNeighbors(paddedImage, x_, neighborsSize, i, j);
 			//calculate Rx and rx
 			Rx_all[omp_get_thread_num()].noalias() += x_ * x_.transpose();
 			rx_all[omp_get_thread_num()].noalias() += x_ * paddedImage(i, j);
@@ -137,8 +136,8 @@ ArrayXXf Watermark::computePredictionErrorMask(const ArrayXXf& paddedImage, Arra
 	errorSequence = computeErrorSequence(paddedImage, coefficients);
 	if (maskNeeded) 
 	{
-		auto error_sequence_abs = errorSequence.abs();
-		return error_sequence_abs / error_sequence_abs.maxCoeff();
+		auto errorSequenceAbs = errorSequence.abs();
+		return errorSequenceAbs / errorSequenceAbs.maxCoeff();
 	}
 	return ArrayXXf();
 }
@@ -146,8 +145,8 @@ ArrayXXf Watermark::computePredictionErrorMask(const ArrayXXf& paddedImage, Arra
 //computes the prediction error sequence 
 ArrayXXf Watermark::computeErrorSequence(const ArrayXXf& padded, const VectorXf& coefficients) const
 {
-	ArrayXXf error_sequence(rows, cols);
-	const int neighbor_size = p / 2;
+	ArrayXXf errorSequence(rows, cols);
+	const int neighborsSize = (p - 1) / 2;
 #pragma omp parallel for
 	for (int i = 0; i < rows; i++) 
 	{
@@ -156,11 +155,11 @@ ArrayXXf Watermark::computeErrorSequence(const ArrayXXf& padded, const VectorXf&
 		for (int j = 0; j < cols; j++) 
 		{
 			const int padded_j = j + pad;
-			createNeighbors(padded, x_, neighbor_size, padded_i, padded_j);
-			error_sequence(i, j) = padded(padded_i, padded_j) - x_.dot(coefficients);
+			createNeighbors(padded, x_, neighborsSize, padded_i, padded_j);
+			errorSequence(i, j) = padded(padded_i, padded_j) - x_.dot(coefficients);
 		}
 	}
-	return error_sequence;
+	return errorSequence;
 }
 
 //main mask detector for Me and NVF masks
@@ -169,7 +168,7 @@ float Watermark::detectWatermark(const ArrayXXf& watermarkedImage, MASK_TYPE mas
 	VectorXf a_z;
 	ArrayXXf mask, e_z;
 	//pad by using the preallocated block
-	padded.block(pad, pad, (paddedRows - pad) - pad, (paddedCols - pad) - pad) = watermarkedImage;
+	padded.block(pad, pad, watermarkedImage.rows(), watermarkedImage.cols()) = watermarkedImage;
 	if (maskType == MASK_TYPE::NVF) 
 	{
 		computePredictionErrorMask(padded, e_z, a_z, ME_MASK_CALCULATION_REQUIRED_NO);
@@ -178,7 +177,7 @@ float Watermark::detectWatermark(const ArrayXXf& watermarkedImage, MASK_TYPE mas
 	else
 		mask = computePredictionErrorMask(padded, e_z, a_z, ME_MASK_CALCULATION_REQUIRED_YES);
 	
-	padded.block(pad, pad, (paddedRows - pad) - pad, (paddedCols - pad) - pad) = (mask * randomMatrix);
+	padded.block(pad, pad, watermarkedImage.rows(), watermarkedImage.cols()) = (mask * randomMatrix);
 	const ArrayXXf e_u = computeErrorSequence(padded, a_z);
 	float dot_ez_eu, d_ez, d_eu;
 	
