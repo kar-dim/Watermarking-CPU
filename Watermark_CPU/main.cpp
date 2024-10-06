@@ -11,6 +11,7 @@
 #include <ios>
 #include <iostream>
 #include <omp.h>
+#include <sstream>
 #include <string>
 #include <thread>
 
@@ -102,7 +103,7 @@ int main(int argc, char** argv)
 			timer::end();
 			secs += timer::elapsedSeconds();
 		}
-		cout << "Calculation of NVF mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(showFps, secs / loops) << "\n\n";
+		cout << "Calculation of NVF mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << executionTime(showFps, secs / loops) << "\n\n";
 		
 		secs = 0;
 		//Prediction error mask calculation
@@ -113,7 +114,7 @@ int main(int argc, char** argv)
 			timer::end();
 			secs += timer::elapsedSeconds();
 		}
-		cout << "Calculation of ME mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(showFps, secs / loops) << "\n\n";
+		cout << "Calculation of ME mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << executionTime(showFps, secs / loops) << "\n\n";
 
 		const ArrayXXf watermarkedNVFgray = eigen3dArrayToGrayscaleArray(watermarkNVF, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 		const ArrayXXf watermarkedMEgray = eigen3dArrayToGrayscaleArray(watermarkME, R_WEIGHT, G_WEIGHT, B_WEIGHT);
@@ -128,7 +129,7 @@ int main(int argc, char** argv)
 			timer::end();
 			secs += timer::elapsedSeconds();
 		}
-		cout << "Calculation of the watermark correlation (NVF) of an image with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(showFps, secs / loops) << "\n\n";
+		cout << "Calculation of the watermark correlation (NVF) of an image with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << executionTime(showFps, secs / loops) << "\n\n";
 
 		secs = 0;
 		//Prediction error mask detection
@@ -139,7 +140,7 @@ int main(int argc, char** argv)
 			timer::end();
 			secs += timer::elapsedSeconds();
 		}
-		cout << "Calculation of the watermark correlation (ME) of an image with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << execution_time(showFps, secs / loops) << "\n\n";
+		cout << "Calculation of the watermark correlation (ME) of an image with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << executionTime(showFps, secs / loops) << "\n\n";
 
 		cout << "Correlation [NVF]: " << std::fixed << std::setprecision(16) << correlationNvf << "\n";
 		cout << "Correlation [ME]: " << std::fixed << std::setprecision(16) << correlationMe << "\n";
@@ -166,16 +167,21 @@ int main(int argc, char** argv)
 }
 
 //calculate execution time in seconds, or show FPS value
-string execution_time(const bool showFps, const double seconds) 
+string executionTime(const bool showFps, const double seconds) 
 {
-	return string(showFps ? std::to_string(1 / seconds) + " FPS." : std::to_string(seconds) + " seconds.");
+	std::stringstream ss;
+	if (showFps)
+		ss << "FPS: " << std::fixed << std::setprecision(2) << 1.0 / seconds << " FPS";
+	else
+		ss << std::fixed << std::setprecision(6) << seconds << " seconds";
+	return ss.str();
 }
 
 //save the provided Eigen RGB array containing a watermarked image to disk
 void saveWatermarkedImage(const string& imagePath, const string& suffix, const EigenArrayRGB& watermark) 
 {
-	std::string watermarked_file = addSuffixBeforeExtension(imagePath, suffix);
-	eigen3dArrayToCimg(watermark).save_png(watermarked_file.c_str());
+	string watermarkedFile = addSuffixBeforeExtension(imagePath, suffix);
+	eigen3dArrayToCimg(watermark).save_png(watermarkedFile.c_str());
 }
 
 //exits the program with the provided exit code
