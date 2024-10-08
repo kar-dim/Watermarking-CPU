@@ -11,5 +11,4 @@ Libraries used:
 - [CImg](https://cimg.eu/)
 - [inih](https://github.com/jtilly/inih)
 
-For building the project, the below must be installed:
-- LibPNG (can be installed from Visual Studio marketplace).
+Note: LibPNG is already included as a vcpkg package from Visual Studio marketplace.
