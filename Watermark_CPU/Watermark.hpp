@@ -30,6 +30,6 @@ public:
 	Watermark& operator=(const Watermark& other) = default;
 	Watermark(Watermark&& other) noexcept = default;
 	Watermark& operator=(Watermark&& other) noexcept = default;
-	EigenArrayRGB makeWatermark(const Eigen::ArrayXXf& inputImage, const EigenArrayRGB& outputImage, MASK_TYPE type);
+	EigenArrayRGB makeWatermark(const Eigen::ArrayXXf& inputImage, const EigenArrayRGB& outputImage, float& watermarkStrength, MASK_TYPE type);
 	float detectWatermark(const Eigen::ArrayXXf& watermarkedImage, MASK_TYPE type);
 };

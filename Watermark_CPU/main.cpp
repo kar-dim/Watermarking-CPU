@@ -92,6 +92,7 @@ int main(int argc, char** argv)
 	try {
 		//initialize main class responsible for watermarking and detection
 		Watermark watermarkObj(rows, cols, wFile, p, psnr);
+		float watermarkStrength;
 
 		double secs = 0;
 		//NVF mask calculation
@@ -99,22 +100,22 @@ int main(int argc, char** argv)
 		for (int i = 0; i < loops; i++) 
 		{
 			timer::start();
-			watermarkNVF = watermarkObj.makeWatermark(arrayGrayscale, arrayRgb, MASK_TYPE::NVF);
+			watermarkNVF = watermarkObj.makeWatermark(arrayGrayscale, arrayRgb, watermarkStrength, MASK_TYPE::NVF);
 			timer::end();
 			secs += timer::elapsedSeconds();
 		}
-		cout << "Calculation of NVF mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << executionTime(showFps, secs / loops) << "\n\n";
+		cout << "Watermark strength (parameter a): " << watermarkStrength <<"\nCalculation of NVF mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << executionTime(showFps, secs / loops) << "\n\n";
 		
 		secs = 0;
 		//Prediction error mask calculation
 		for (int i = 0; i < loops; i++) 
 		{
 			timer::start();
-			watermarkME = watermarkObj.makeWatermark(arrayGrayscale, arrayRgb, MASK_TYPE::ME);
+			watermarkME = watermarkObj.makeWatermark(arrayGrayscale, arrayRgb, watermarkStrength, MASK_TYPE::ME);
 			timer::end();
 			secs += timer::elapsedSeconds();
 		}
-		cout << "Calculation of ME mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << executionTime(showFps, secs / loops) << "\n\n";
+		cout << "Watermark strength (parameter a): " << watermarkStrength << "\nCalculation of ME mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << executionTime(showFps, secs / loops) << "\n\n";
 
 		const ArrayXXf watermarkedNVFgray = eigen3dArrayToGrayscaleArray(watermarkNVF, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 		const ArrayXXf watermarkedMEgray = eigen3dArrayToGrayscaleArray(watermarkME, R_WEIGHT, G_WEIGHT, B_WEIGHT);

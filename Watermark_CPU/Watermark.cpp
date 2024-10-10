@@ -28,13 +28,13 @@ ArrayXXf Watermark::loadRandomMatrix(const string wFilePath, const Index rows, c
 	if (!randomMatrixStream.is_open())
 		throw std::runtime_error(string("Error opening '" + wFilePath + "' file for Random noise W array\n"));
 	randomMatrixStream.seekg(0, std::ios::end);
-	const auto total_bytes = randomMatrixStream.tellg();
+	const auto totalBytes = randomMatrixStream.tellg();
 	randomMatrixStream.seekg(0, std::ios::beg);
-	if (rows * cols * sizeof(float) != total_bytes)
-		throw std::runtime_error(string("Error: W file total elements != image dimensions! W file total elements: " + std::to_string(total_bytes / (sizeof(float))) + ", Image width: " + std::to_string(cols) + ", Image height: " + std::to_string(rows) + "\n"));
-	std::unique_ptr<float> w_ptr(new float[rows * cols]);
-	randomMatrixStream.read(reinterpret_cast<char*>(w_ptr.get()), total_bytes);
-	return Map<ArrayXXf>(w_ptr.get(), cols, rows).transpose().eval();
+	if (rows * cols * sizeof(float) != totalBytes)
+		throw std::runtime_error(string("Error: W file total elements != image dimensions! W file total elements: " + std::to_string(totalBytes / (sizeof(float))) + ", Image width: " + std::to_string(cols) + ", Image height: " + std::to_string(rows) + "\n"));
+	std::unique_ptr<float> wPtr(new float[rows * cols]);
+	randomMatrixStream.read(reinterpret_cast<char*>(wPtr.get()), totalBytes);
+	return Map<ArrayXXf>(wPtr.get(), cols, rows).transpose().eval();
 }
 
 //generate p x p neighbors
@@ -75,7 +75,7 @@ ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& pad
 //Main watermark embedding method
 //it embeds the watermark computed fom "inputImage" (always grayscale)
 //into a new array based on "outputImage" (RGB)
-EigenArrayRGB Watermark::makeWatermark(const ArrayXXf& inputImage, const EigenArrayRGB& outputImage, MASK_TYPE maskType) 
+EigenArrayRGB Watermark::makeWatermark(const ArrayXXf& inputImage, const EigenArrayRGB& outputImage, float &watermarkStrength, MASK_TYPE maskType) 
 {
 	padded.block(pad, pad, inputImage.rows(), inputImage.cols()) = inputImage;
 	ArrayXXf mask;
@@ -88,8 +88,8 @@ EigenArrayRGB Watermark::makeWatermark(const ArrayXXf& inputImage, const EigenAr
 		mask = computePredictionErrorMask(padded, errorSequence, coefficients, ME_MASK_CALCULATION_REQUIRED_YES);
 	}
 	const ArrayXXf u = mask * randomMatrix;
-	const float a = strengthFactor / sqrt(u.square().sum() / (rows * cols));
-	const ArrayXXf uStrength = u * a;
+	watermarkStrength = strengthFactor / sqrt(u.square().sum() / (rows * cols));
+	const ArrayXXf uStrength = u * watermarkStrength;
 	
 	EigenArrayRGB watermarkedImage;
 #pragma omp parallel for
