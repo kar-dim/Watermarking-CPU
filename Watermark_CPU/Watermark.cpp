@@ -65,7 +65,7 @@ ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& pad
 			const int startCol = j - neighborsSize;
 			const int endCol = j + neighborsSize;
 			const auto neighb = padded.block(startRow, startCol, endRow - startRow + 1, endCol - startCol + 1);
-			const float variance = (neighb - neighb.mean()).matrix().squaredNorm() / (pSquared - 1);
+			const float variance = (neighb - neighb.mean()).matrix().squaredNorm() / pSquared;
 			nvf(i - pad, j - pad) = variance / (1.0f + variance);
 		}
 	}
