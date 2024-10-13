@@ -54,7 +54,9 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)Watermark_CPU\libs\Eigen;$(SolutionDir)Watermark_CPU\libs\CImg-3.4.3;$(SolutionDir)Watermark_CPU\libs\zlib\include;$(LLVMInstallDir)\lib\clang\17\include;$(SolutionDir)Watermark_CPU\libs\inih;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <AdditionalOptions>-openmp -mavx2 -mfma %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-openmp -mavx2 -mfma /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -76,8 +78,10 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)Watermark_CPU\libs\Eigen;$(SolutionDir)Watermark_CPU\libs\CImg-3.4.3;$(SolutionDir)Watermark_CPU\libs\zlib\include;$(LLVMInstallDir)\lib\clang\17\include;$(SolutionDir)Watermark_CPU\libs\inih;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <AdditionalOptions>-openmp -mavx2 -mfma /clang:-O3 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-openmp -mavx2 -mfma /clang:-O3 /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
       <OpenMPSupport>true</OpenMPSupport>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
