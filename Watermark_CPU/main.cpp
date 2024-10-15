@@ -181,7 +181,7 @@ string executionTime(const bool showFps, const double seconds)
 //save the provided Eigen RGB array containing a watermarked image to disk
 void saveWatermarkedImage(const string& imagePath, const string& suffix, const EigenArrayRGB& watermark) 
 {
-	string watermarkedFile = addSuffixBeforeExtension(imagePath, suffix);
+	const string watermarkedFile = addSuffixBeforeExtension(imagePath, suffix);
 	eigen3dArrayToCimg(watermark).save_png(watermarkedFile.c_str());
 }
 
