@@ -6,7 +6,7 @@ Code for my Diploma thesis at Information and Communication Systems Engineering 
 
 
 This Diploma thesis aims to compare the above algorithms (mainly in execution speed) when they are implemented in GPU and CPU.
-Part 1 / CPU usage for calculations. (Part 2 / GPU usage [here](https://github.com/kar-dim/diploma-thesis_GPU) )
+Part 1 / CPU usage for calculations. (Part 2 / GPU usage [here](https://github.com/kar-dim/Watermarking-GPU) )
 
 Libraries used:
 - [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page)
