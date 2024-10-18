@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 	const string imagePath = inir.Get("paths", "image", "NO_IMAGE");
 	const bool showFps = inir.GetBoolean("options", "execution_time_in_fps", false);
 	const int p = inir.GetInteger("parameters", "p", 5);
-	const float psnr = static_cast<float>(inir.GetReal("parameters", "psnr", 30.0f));
+	const float psnr = inir.GetFloat("parameters", "psnr", 30.0f);
 	const string wFile = inir.Get("paths", "w_path", "w.txt");
 	int numThreads = inir.GetInteger("parameters", "threads", 0);
 	if (numThreads <= 0)
