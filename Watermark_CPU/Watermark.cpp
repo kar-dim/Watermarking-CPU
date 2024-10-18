@@ -121,8 +121,8 @@ ArrayXXf Watermark::computePredictionErrorMask(const ArrayXXf& paddedImage, Arra
 	//reduction sums of Rx,rx of each thread
 	for (int i = 0; i < numThreads; i++) 
 	{
-		Rx += Rx_all[i];
-		rx += rx_all[i];
+		Rx.noalias() += Rx_all[i];
+		rx.noalias() += rx_all[i];
 	}
 	coefficients = Rx.fullPivLu().solve(rx);
 	//calculate ex(i,j)
