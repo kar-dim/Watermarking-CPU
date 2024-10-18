@@ -1,7 +1,7 @@
 #pragma once
-#include "cimg_init.hpp"
 #include "eigen_rgb_array.hpp"
 #include <chrono>
+#include <CImg.h>
 #include <Eigen/Dense>
 #include <string>
 

@@ -1,8 +1,9 @@
-﻿#include "cimg_init.hpp"
+﻿#define cimg_use_png
 #include "eigen_rgb_array.hpp"
+#include "main_utils.hpp"
 #include "Utilities.hpp"
 #include "Watermark.hpp"
-#include "main_utils.hpp"
+#include <CImg.h>
 #include <cstdlib>
 #include <Eigen/Dense>
 #include <exception>

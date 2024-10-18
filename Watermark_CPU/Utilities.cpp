@@ -1,7 +1,7 @@
-﻿#include "cimg_init.hpp"
-#include "eigen_rgb_array.hpp"
+﻿#include "eigen_rgb_array.hpp"
 #include "Utilities.hpp"
 #include <chrono>
+#include <CImg.h>
 #include <Eigen/Dense>
 #include <string>
 
