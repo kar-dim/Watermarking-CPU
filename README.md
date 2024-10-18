@@ -13,4 +13,4 @@ Libraries used:
 - [CImg](https://cimg.eu/)
 - [inih](https://github.com/jtilly/inih)
 
-Note: LibPNG is already included as a vcpkg package from Visual Studio marketplace.
+Note: LibPNG is also included, and it's used internally by CImg for loading and saving of images.
