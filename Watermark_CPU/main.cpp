@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 	const float psnr = static_cast<float>(inir.GetReal("parameters", "psnr", 30.0f));
 	const string wFile = inir.Get("paths", "w_path", "w.txt");
 	int numThreads = inir.GetInteger("parameters", "threads", 0);
-	if (numThreads <= 0 || numThreads > 256) 
+	if (numThreads <= 0)
 	{
 		auto threadsSupported = std::thread::hardware_concurrency();
 		numThreads = threadsSupported == 0 ? 2 : threadsSupported;
