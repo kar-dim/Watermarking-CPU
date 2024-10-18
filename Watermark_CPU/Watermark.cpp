@@ -40,14 +40,10 @@ ArrayXXf Watermark::loadRandomMatrix(const string wFilePath, const Index rows, c
 //generate p x p neighbors
 void Watermark::createNeighbors(const ArrayXXf& array, VectorXf& x_, const int neighborSize, const int i, const int j) const
 {
-	const int startRow = i - neighborSize;
-	const int startCol = j - neighborSize;
-	const int endRow = i + neighborSize;
-	const int endCol = j + neighborSize;
-	const auto x_temp = array.block(startRow, startCol, endRow - startRow + 1, endCol - startCol + 1).reshaped();
+	const auto x_temp = array.block(i - neighborSize, j - neighborSize, 2 * neighborSize + 1, 2 * neighborSize + 1).reshaped();
 	//ignore the central pixel value
-	x_(seq(0, halfNeighborsSize - 1)) = x_temp(seq(0, halfNeighborsSize - 1));
-	x_(seq(halfNeighborsSize, pSquared - 2)) = x_temp(seq(halfNeighborsSize + 1, pSquared - 1));
+	x_.head(halfNeighborsSize) = x_temp.head(halfNeighborsSize);
+	x_.tail(pSquared - halfNeighborsSize - 1) = x_temp.tail(halfNeighborsSize);
 }
 
 //computes the custom mask, in this case "NVF" mask
@@ -60,12 +56,9 @@ ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& pad
 	{
 		for (int j = pad; j < cols + pad; j++) 
 		{
-			const int startRow = i - neighborsSize;
-			const int endRow = i + neighborsSize;
-			const int startCol = j - neighborsSize;
-			const int endCol = j + neighborsSize;
-			const auto neighb = padded.block(startRow, startCol, endRow - startRow + 1, endCol - startCol + 1);
-			const float variance = (neighb - neighb.mean()).matrix().squaredNorm() / pSquared;
+			const auto neighb = padded.block(i - neighborsSize, j - neighborsSize, 2 * neighborsSize + 1, 2 * neighborsSize + 1);
+			const float mean = neighb.mean();
+			const float variance = (neighb - mean).square().sum() / pSquared;
 			nvf(i - pad, j - pad) = variance / (1.0f + variance);
 		}
 	}
@@ -151,12 +144,12 @@ ArrayXXf Watermark::computeErrorSequence(const ArrayXXf& padded, const VectorXf&
 	for (int i = 0; i < rows; i++) 
 	{
 		VectorXf x_(pSquared - 1);
-		const int padded_i = i + pad;
+		const int iPad = i + pad;
 		for (int j = 0; j < cols; j++) 
 		{
-			const int padded_j = j + pad;
-			createNeighbors(padded, x_, neighborsSize, padded_i, padded_j);
-			errorSequence(i, j) = padded(padded_i, padded_j) - x_.dot(coefficients);
+			const int jPad = j + pad;
+			createNeighbors(padded, x_, neighborsSize, iPad, jPad);
+			errorSequence(i, j) = padded(iPad, jPad) - x_.dot(coefficients);
 		}
 	}
 	return errorSequence;
