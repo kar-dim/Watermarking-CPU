@@ -41,9 +41,8 @@ int main(int argc, char** argv)
 	}
 	const string imagePath = inir.Get("paths", "image", "NO_IMAGE");
 	const bool showFps = inir.GetBoolean("options", "execution_time_in_fps", false);
-	const int p = inir.GetInteger("parameters", "p", 5);
-	const float psnr = inir.GetFloat("parameters", "psnr", 30.0f);
-	const string wFile = inir.Get("paths", "w_path", "w.txt");
+	const int p = inir.GetInteger("parameters", "p", -1);
+	const float psnr = inir.GetFloat("parameters", "psnr", -1.0f);
 	int numThreads = inir.GetInteger("parameters", "threads", 0);
 	if (numThreads <= 0)
 	{
@@ -92,7 +91,7 @@ int main(int argc, char** argv)
 	//tests begin
 	try {
 		//initialize main class responsible for watermarking and detection
-		Watermark watermarkObj(rows, cols, wFile, p, psnr);
+		Watermark watermarkObj(rows, cols, inir.Get("paths", "w_path", "w.txt"), p, psnr);
 		float watermarkStrength;
 
 		double secs = 0;
