@@ -54,7 +54,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)libs\Eigen;$(ProjectDir)libs\CImg-3.4.3;$(ProjectDir)libs\zlib\include;$(ProjectDir)libs\inih;$(ProjectDir)libs\libpng\include;$(LLVMInstallDir)\lib\clang\17\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-openmp -mavx2 -mfma /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
@@ -80,7 +80,7 @@ xcopy "$(ProjectDir)libs\zlib\bin\zlibd1.dll" "$(SolutionDir)x64\Debug\" /y /D</
       <AdditionalIncludeDirectories>$(ProjectDir)libs\Eigen;$(ProjectDir)libs\CImg-3.4.3;$(ProjectDir)libs\zlib\include;$(ProjectDir)libs\inih;$(ProjectDir)libs\libpng\include;$(LLVMInstallDir)\lib\clang\17\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-openmp -mavx2 -mfma /clang:-O3 /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
       <OpenMPSupport>true</OpenMPSupport>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
