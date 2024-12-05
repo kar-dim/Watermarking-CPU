@@ -57,7 +57,10 @@ int main(int argc, char** argv)
 #pragma omp parallel for
 	for (int i = 0; i < 24; i++) {}
 
+	//load image from disk
+	timer::start();
 	const CImg<float> rgbImageCimg(imagePath.c_str());
+	timer::end();
 	const int rows = rgbImageCimg.height();
 	const int cols = rgbImageCimg.width();
 
@@ -82,11 +85,12 @@ int main(int argc, char** argv)
 	cout << "Image size is: " << rows << " rows and " << cols << " columns\n\n";
 
 	//copy from cimg to Eigen
+	double secs = timer::elapsedSeconds();
 	timer::start();
 	const EigenArrayRGB arrayRgb = cimgToEigen3dArray(rgbImageCimg);
 	const ArrayXXf arrayGrayscale = eigen3dArrayToGrayscaleArray(arrayRgb, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 	timer::end();
-	cout << "Time to load image from disk and initialize CImg and Eigen memory objects: " << timer::elapsedSeconds() << " seconds\n\n";
+	cout << "Time to load image from disk and initialize CImg and Eigen memory objects: " << secs + timer::elapsedSeconds() << " seconds\n\n";
 	
 	//tests begin
 	try {
@@ -94,7 +98,7 @@ int main(int argc, char** argv)
 		Watermark watermarkObj(rows, cols, inir.Get("paths", "w_path", "w.txt"), p, psnr);
 		float watermarkStrength;
 
-		double secs = 0;
+		secs = 0;
 		//NVF mask calculation
 		EigenArrayRGB watermarkNVF, watermarkME;
 		for (int i = 0; i < loops; i++) 
