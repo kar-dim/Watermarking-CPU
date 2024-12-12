@@ -52,7 +52,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)libs\Eigen;$(ProjectDir)libs\CImg-3.4.3;$(ProjectDir)libs\zlib\include;$(ProjectDir)libs\inih;$(ProjectDir)libs\libpng\include;$(LLVMInstallDir)\lib\clang\17\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)libs\Eigen;$(ProjectDir)libs\CImg-3.4.3;$(ProjectDir)libs\zlib\include;$(ProjectDir)libs\inih;$(ProjectDir)libs\libpng\include;$(ProjectDir)libs\libjpeg\include;$(LLVMInstallDir)\lib\clang\17\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-openmp -mavx2 -mfma /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
@@ -60,13 +60,14 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs\zlib\lib;$(LLVMInstallDir)\lib;$(ProjectDir)libs\libpng\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(ProjectDir)libs\zlib\lib\zlibd.lib;libomp.lib;$(ProjectDir)libs\libpng\lib\libpng16d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs\zlib\lib;$(LLVMInstallDir)\lib;$(ProjectDir)libs\libpng\lib;$(ProjectDir)libs\libjpeg\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(ProjectDir)libs\zlib\lib\zlibd.lib;libomp.lib;libpng16d.lib;jpeg.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(LLVMInstallDir)\bin\libomp.dll" "$(SolutionDir)x64\Debug\" /y /D
 xcopy "$(ProjectDir)libs\libpng\bin\libpng16d.dll" "$(SolutionDir)x64\Debug\" /y /D
-xcopy "$(ProjectDir)libs\zlib\bin\zlibd1.dll" "$(SolutionDir)x64\Debug\" /y /D</Command>
+xcopy "$(ProjectDir)libs\zlib\bin\zlibd1.dll" "$(SolutionDir)x64\Debug\" /y /D
+xcopy "$(ProjectDir)libs\libjpeg\bin\debug\jpeg62.dll" "$(SolutionDir)x64\Debug\" /y /D</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -77,7 +78,7 @@ xcopy "$(ProjectDir)libs\zlib\bin\zlibd1.dll" "$(SolutionDir)x64\Debug\" /y /D</
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)libs\Eigen;$(ProjectDir)libs\CImg-3.4.3;$(ProjectDir)libs\zlib\include;$(ProjectDir)libs\inih;$(ProjectDir)libs\libpng\include;$(LLVMInstallDir)\lib\clang\17\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)libs\Eigen;$(ProjectDir)libs\CImg-3.4.3;$(ProjectDir)libs\zlib\include;$(ProjectDir)libs\inih;$(ProjectDir)libs\libpng\include;$(ProjectDir)libs\libjpeg\include;$(LLVMInstallDir)\lib\clang\17\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-openmp -mavx2 -mfma /clang:-O3 /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
       <OpenMPSupport>true</OpenMPSupport>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -88,13 +89,14 @@ xcopy "$(ProjectDir)libs\zlib\bin\zlibd1.dll" "$(SolutionDir)x64\Debug\" /y /D</
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Watermark_CPU\libs\zlib\lib;$(LLVMInstallDir)\lib;$(ProjectDir)libs\libpng\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(ProjectDir)\libs\zlib\lib\zlib.lib;libomp.lib;$(ProjectDir)libs\libpng\lib\libpng16.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Watermark_CPU\libs\zlib\lib;$(LLVMInstallDir)\lib;$(ProjectDir)libs\libpng\lib;$(ProjectDir)libs\libjpeg\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(ProjectDir)\libs\zlib\lib\zlib.lib;libomp.lib;libpng16.lib;jpeg.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(LLVMInstallDir)\bin\libomp.dll" "$(SolutionDir)x64\Release\" /y /D
 xcopy "$(ProjectDir)libs\libpng\bin\libpng16.dll" "$(SolutionDir)x64\Release\" /y /D
-xcopy "$(ProjectDir)libs\zlib\bin\zlib1.dll" "$(SolutionDir)x64\Release\" /y /D</Command>
+xcopy "$(ProjectDir)libs\zlib\bin\zlib1.dll" "$(SolutionDir)x64\Release\" /y /D
+xcopy "$(ProjectDir)libs\libjpeg\bin\release\jpeg62.dll" "$(SolutionDir)x64\Release\" /y /D</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

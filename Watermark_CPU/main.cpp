@@ -1,4 +1,5 @@
 ﻿#define cimg_use_png
+#define cimg_use_jpeg
 #include "eigen_rgb_array.hpp"
 #include "main_utils.hpp"
 #include "Utilities.hpp"
@@ -157,9 +158,9 @@ int main(int argc, char** argv)
 #pragma omp parallel sections 
 			{
 #pragma omp section
-				saveWatermarkedImage(imagePath, "_W_NVF", watermarkNVF);
+				saveWatermarkedImage(imagePath, "_W_NVF", watermarkNVF, IMAGE_TYPE::PNG);
 #pragma omp section
-				saveWatermarkedImage(imagePath, "_W_ME", watermarkME);
+				saveWatermarkedImage(imagePath, "_W_ME", watermarkME, IMAGE_TYPE::PNG);
 			}
 			cout << "Successully saved to disk\n";
 		}
@@ -183,10 +184,11 @@ string executionTime(const bool showFps, const double seconds)
 }
 
 //save the provided Eigen RGB array containing a watermarked image to disk
-void saveWatermarkedImage(const string& imagePath, const string& suffix, const EigenArrayRGB& watermark) 
+void saveWatermarkedImage(const string& imagePath, const string& suffix, const EigenArrayRGB& watermark, const IMAGE_TYPE type)
 {
 	const string watermarkedFile = addSuffixBeforeExtension(imagePath, suffix);
-	eigen3dArrayToCimg(watermark).save_png(watermarkedFile.c_str());
+	type == IMAGE_TYPE::PNG ? eigen3dArrayToCimg(watermark).save_png(watermarkedFile.c_str())
+							: eigen3dArrayToCimg(watermark).save_jpeg(watermarkedFile.c_str(), 100);
 }
 
 //exits the program with the provided exit code
