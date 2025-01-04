@@ -26,10 +26,6 @@ private:
 
 public:
 	Watermark(const Eigen::Index rows, const Eigen::Index cols, const std::string wFilePath, const int p, const float psnr);
-	Watermark(const Watermark& other) = default;
-	Watermark& operator=(const Watermark& other) = default;
-	Watermark(Watermark&& other) noexcept = default;
-	Watermark& operator=(Watermark&& other) noexcept = default;
 	EigenArrayRGB makeWatermark(const Eigen::ArrayXXf& inputImage, const EigenArrayRGB& outputImage, float& watermarkStrength, MASK_TYPE type);
 	float detectWatermark(const Eigen::ArrayXXf& watermarkedImage, MASK_TYPE type);
 };
