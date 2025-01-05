@@ -40,7 +40,7 @@ ArrayXXf Watermark::loadRandomMatrix(const string wFilePath, const Index rows, c
 //generate p x p neighbors
 void Watermark::createNeighbors(const ArrayXXf& array, VectorXf& x_, const int neighborSize, const int i, const int j) const
 {
-	const auto x_temp = array.block(i - neighborSize, j - neighborSize, 2 * neighborSize + 1, 2 * neighborSize + 1).reshaped();
+	const auto x_temp = array.block(i - neighborSize, j - neighborSize, p, p).reshaped();
 	//ignore the central pixel value
 	x_.head(halfNeighborsSize) = x_temp.head(halfNeighborsSize);
 	x_.tail(pSquared - halfNeighborsSize - 1) = x_temp.tail(halfNeighborsSize);
@@ -52,11 +52,11 @@ ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& pad
 	ArrayXXf nvf(rows, cols);
 	const int neighborsSize = (p - 1) / 2;
 #pragma omp parallel for
-	for (int i = pad; i < rows + pad; i++) 
+	for (int j = pad; j < cols + pad; j++) 
 	{
-		for (int j = pad; j < cols + pad; j++) 
+		for (int i = pad; i < rows + pad; i++) 
 		{
-			const auto neighb = padded.block(i - neighborsSize, j - neighborsSize, 2 * neighborsSize + 1, 2 * neighborsSize + 1);
+			const auto neighb = padded.block(i - neighborsSize, j - neighborsSize, p, p);
 			const float mean = neighb.mean();
 			const float variance = (neighb - mean).square().sum() / pSquared;
 			nvf(i - pad, j - pad) = variance / (1.0f + variance);
@@ -106,10 +106,10 @@ ArrayXXf Watermark::computePredictionErrorMask(const ArrayXXf& paddedImage, Arra
 	}
 	const int neighborsSize = (p - 1) / 2;
 #pragma omp parallel for
-	for (int i = pad; i < rows + pad; i++) 
+	for (int j = pad; j < cols + pad; j++)
 	{
 		VectorXf x_(pSquared - 1);
-		for (int j = pad; j < cols + pad; j++) 
+		for (int i = pad; i < rows + pad; i++)
 		{
 			//calculate p^2 - 1 neighbors
 			createNeighbors(paddedImage, x_, neighborsSize, i, j);
