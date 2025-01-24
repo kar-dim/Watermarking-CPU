@@ -7,7 +7,9 @@ Code for my Diploma thesis at Information and Communication Systems Engineering 
 
 # Overview
 
-The aim of this project is to compare the performance (primarily execution speed) of watermarking algorithms when implemented on CPU versus GPU. This repository focuses on the CPU implementation (Part 1). The GPU implementation can be found in the corresponding GPU repository (Part 2 / GPU usage [here](https://github.com/kar-dim/Watermarking-GPU) ). **NOTE**: This repository features a refactored and optimized version of the original implementation, with improved algorithms and execution times.
+The aim of this project is to compare the performance (primarily execution speed) of watermarking algorithms when implemented on CPU versus GPU. This repository focuses on the CPU implementation (Part 1). The GPU implementation can be found in the corresponding GPU repository (Part 2 / GPU usage [here](https://github.com/kar-dim/Watermarking-GPU) ). 
+
+**NOTE**: This repository features a refactored and optimized version of the original implementation, with improved algorithms and execution times.
 
 # Key Features
 
