@@ -16,6 +16,29 @@ The aim of this project is to compare the performance (primarily execution speed
 - Implementation of watermark embedding and detection algorithms for images.
 - Comparative performance analysis between CPU and GPU implementations.
 
+# Run the pre-build binaries
+- Get the latest binaries [here](https://github.com/kar-dim/Watermarking-CPU/releases). The binary contains the sample application which embeds and detects watermarks for the provided images. Before we can emded the watermark, we have to create it first.
+- This implementation is based on Normal-distributed random values with zero mean and standard deviation of one. The ```CommonRandomMatrix``` produces pseudo-random values. A bat file is included to generate the watermarks, with sizes exactly the same as the provided sample images. Of course, one can generate a random watermark for any desired image size like this:  
+```CommonRandomMatrix.exe [rows] [cols] [seed] [fileName]``` .Then pass the provided watermark file path in the sample project configuration.
+
+The sample application:
+   - Embeds the watermark using the NVF and the proposed Prediction-Error mask.
+   - Detects the watermark using the proposed Prediction-Error based detector.
+   - Prints FPS for both operations, and both masks.
+Needs to be parameterized from the corresponding ```settings.ini``` file. Here is a detailed explanation for each parameter:
+
+| Parameter                         | Description                                                                                                                 |
+|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------               |
+| image                             | Path to the input image.                                                                                                                   |
+| w_path                            | Path to the Random Matrix (watermark). This is produced by the CommonRandomMatrix project. Watermark and Image sizes should match exactly. |
+| save_watermarked_files_to_disk    | \[true/false\]: Set to true to save the watermarked NVF and Prediction-Error files to disk.                                                |
+| execution_time_in_fps             | \[true/false\]: Set to true to display execution times in FPS. Else, it will display execution time in seconds.                            |
+| p                                 | Window size for masking algorithms. Currently only ```p=3``` is allowed.                                                                   |
+| psnr                              | PSNR (Peak Signal-to-Noise Ratio). Higher values correspond to less watermark in the image, reducing noise, but making detection harder.   |
+| threads                           | Maximum number of threads. Set to 0 to automatically find the maximum concurrent threads supported, or set them manually here.             |
+| loops_for_test                    | Loops the algorithms many times, simulating more work. A value of 1000 produces almost identical execution times.                          |
+
+
 # Libraries Used
 
 - [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page): A C++ template library for linear algebra.
