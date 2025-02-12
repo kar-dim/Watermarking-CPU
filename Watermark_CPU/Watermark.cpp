@@ -141,13 +141,13 @@ ArrayXXf Watermark::computeErrorSequence(const ArrayXXf& padded, const VectorXf&
 	ArrayXXf errorSequence(rows, cols);
 	const int neighborsSize = (p - 1) / 2;
 #pragma omp parallel for
-	for (int i = 0; i < rows; i++) 
+	for (int j = 0; j < cols; j++)
 	{
 		VectorXf x_(pSquared - 1);
-		const int iPad = i + pad;
-		for (int j = 0; j < cols; j++) 
+		const int jPad = j + pad;
+		for (int i = 0; i < rows; i++)
 		{
-			const int jPad = j + pad;
+			const int iPad = i + pad;
 			createNeighbors(padded, x_, neighborsSize, iPad, jPad);
 			errorSequence(i, j) = padded(iPad, jPad) - x_.dot(coefficients);
 		}
