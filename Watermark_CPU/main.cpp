@@ -291,7 +291,7 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 					watermarkedFrame = watermarkObj.makeWatermark(inputFrame, inputFrame, watermarkStrength, MASK_TYPE::ME).transpose().cast<uint8_t>();
 				}
 				// Write modified frame to ffmpeg (pipe)
-				fwrite(watermarkedFrame.data(), 1, width * frame->height, ffmpegPipe.get());
+				fwrite(embedWatermark ? watermarkedFrame.data() : frame->data[0], 1, width * frame->height, ffmpegPipe.get());
 				fwrite(frame->data[1], 1, width * frame->height / 4, ffmpegPipe.get());
 				fwrite(frame->data[2], 1, width * frame->height / 4, ffmpegPipe.get());
 			}
