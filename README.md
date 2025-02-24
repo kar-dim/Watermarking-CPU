@@ -16,7 +16,8 @@ The aim of this project is to compare the performance (primarily execution speed
 - Implementation of watermark embedding and detection algorithms for images.
 - Comparative performance analysis between CPU and GPU implementations.
 
-# Run the pre-build binaries
+# Run the pre-built binaries
+
 - Get the latest binaries [here](https://github.com/kar-dim/Watermarking-CPU/releases). The binary contains the sample application which embeds and detects watermarks for the provided images and videos. Before we can emded the watermark, we have to create it first.
 - This implementation is based on Normal-distributed random values with zero mean and standard deviation of one. The ```CommonRandomMatrix``` produces pseudo-random values. A bat file is included to generate the watermarks, with sizes exactly the same as the provided sample images. Of course, one can generate a random watermark for any desired image size like this:  
 ```CommonRandomMatrix.exe [rows] [cols] [seed] [fileName]```  then pass the provided watermark file path in the sample project configuration.
