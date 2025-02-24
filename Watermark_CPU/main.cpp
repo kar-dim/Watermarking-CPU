@@ -9,6 +9,7 @@
 #include <cstring>
 #include <Eigen/Dense>
 #include <exception>
+#include <format>
 #include <functional>
 #include <INIReader.h>
 #include <iomanip>
@@ -139,7 +140,7 @@ int testForImage(const INIReader& inir, const int p, const float psnr)
 		timer::end();
 		secs += timer::elapsedSeconds();
 	}
-	cout << "Watermark strength (parameter a): " << watermarkStrength << "\nCalculation of NVF mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << executionTime(showFps, secs / loops) << "\n\n";
+	cout << std::format("Watermark strength(parameter a) : {}\nCalculation of NVF mask with {} rows and {} columns and parameters:\np = {}  PSNR(dB) = {}\n{}\n\n", watermarkStrength, rows, cols, p, psnr, executionTime(showFps, secs / loops));
 
 	secs = 0;
 	//Prediction error mask calculation
@@ -150,7 +151,7 @@ int testForImage(const INIReader& inir, const int p, const float psnr)
 		timer::end();
 		secs += timer::elapsedSeconds();
 	}
-	cout << "Watermark strength (parameter a): " << watermarkStrength << "\nCalculation of ME mask with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << executionTime(showFps, secs / loops) << "\n\n";
+	cout << std::format("Watermark strength(parameter a) : {}\nCalculation of ME mask with {} rows and {} columns and parameters:\np = {}  PSNR(dB) = {}\n{}\n\n", watermarkStrength, rows, cols, p, psnr, executionTime(showFps, secs / loops));
 
 	const ArrayXXf watermarkedNVFgray = eigen3dArrayToGrayscaleArray(watermarkNVF, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 	const ArrayXXf watermarkedMEgray = eigen3dArrayToGrayscaleArray(watermarkME, R_WEIGHT, G_WEIGHT, B_WEIGHT);
@@ -165,7 +166,7 @@ int testForImage(const INIReader& inir, const int p, const float psnr)
 		timer::end();
 		secs += timer::elapsedSeconds();
 	}
-	cout << "Calculation of the watermark correlation (NVF) of an image with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << executionTime(showFps, secs / loops) << "\n\n";
+	cout << std::format("Calculation of the watermark correlation (NVF) of an image with {} rows and {} columns and parameters:\np = {}  PSNR(dB) = {}\n{}\n\n", rows, cols, p, psnr, executionTime(showFps, secs / loops));
 
 	secs = 0;
 	//Prediction error mask detection
@@ -176,10 +177,10 @@ int testForImage(const INIReader& inir, const int p, const float psnr)
 		timer::end();
 		secs += timer::elapsedSeconds();
 	}
-	cout << "Calculation of the watermark correlation (ME) of an image with " << rows << " rows and " << cols << " columns and parameters:\np = " << p << "  PSNR(dB) = " << psnr << "\n" << executionTime(showFps, secs / loops) << "\n\n";
+	cout << std::format("Calculation of the watermark correlation (ME) of an image with {} rows and {} columns and parameters:\np = {}  PSNR(dB) = {}\n{}\n\n", rows, cols, p, psnr, executionTime(showFps, secs / loops));
 
-	cout << "Correlation [NVF]: " << std::fixed << std::setprecision(16) << correlationNvf << "\n";
-	cout << "Correlation [ME]: " << std::fixed << std::setprecision(16) << correlationMe << "\n";
+	cout << std::format("Correlation [NVF]: {:.16f}\n", correlationNvf);
+	cout << std::format("Correlation [ME]: {:.16f}\n", correlationMe);
 
 	//save watermarked images to disk
 	if (inir.GetBoolean("options", "save_watermarked_files_to_disk", false))
@@ -396,12 +397,7 @@ bool receivedValidVideoFrame(AVCodecContext* inputDecoderCtx, AVPacket* packet, 
 //calculate execution time in seconds, or show FPS value
 string executionTime(const bool showFps, const double seconds) 
 {
-	std::stringstream ss;
-	if (showFps)
-		ss << "FPS: " << std::fixed << std::setprecision(2) << 1.0 / seconds << " FPS";
-	else
-		ss << std::fixed << std::setprecision(6) << seconds << " seconds";
-	return ss.str();
+	return showFps ? std::format("FPS: {:.2f} FPS", 1.0 / seconds) : std::format("{:.6f} seconds", seconds);
 }
 
 //save the provided Eigen RGB array containing a watermarked image to disk
