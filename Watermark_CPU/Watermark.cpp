@@ -68,13 +68,32 @@ ArrayXXf Watermark::computeCustomMask(const ArrayXXf& image, const ArrayXXf& pad
 //Main watermark embedding method
 //it embeds the watermark computed fom "inputImage" (always grayscale)
 //into a new array based on "outputImage" (RGB)
-EigenArrayRGB Watermark::makeWatermark(const ArrayXXf& inputImage, const EigenArrayRGB& outputImage, float &watermarkStrength, MASK_TYPE maskType) 
+EigenArrayRGB Watermark::makeWatermark(const ArrayXXf& inputImage, const EigenArrayRGB& outputImage, float& watermarkStrength, MASK_TYPE maskType)
+{
+	const ArrayXXf uStrength = computeStrengthenedWatermark(inputImage, watermarkStrength, maskType);
+	EigenArrayRGB watermarkedImage;
+#pragma omp parallel for
+	for (int channel = 0; channel < 3; channel++)
+		watermarkedImage[channel] = (outputImage[channel] + uStrength).cwiseMax(0).cwiseMin(255);
+	return watermarkedImage;
+}
+
+//Main watermark embedding method
+//it embeds the watermark computed fom "inputImage" (always grayscale)
+//into a new array based on "outputImage" (always grayscale)
+ArrayXXf Watermark::makeWatermark(const ArrayXXf& inputImage, const ArrayXXf& outputImage, float &watermarkStrength, MASK_TYPE maskType) 
+{
+	const ArrayXXf uStrength = computeStrengthenedWatermark(inputImage, watermarkStrength, maskType);
+	return (outputImage + uStrength).cwiseMax(0).cwiseMin(255);
+}
+
+ArrayXXf Watermark::computeStrengthenedWatermark(const ArrayXXf& inputImage, float& watermarkStrength, MASK_TYPE maskType)
 {
 	padded.block(pad, pad, inputImage.rows(), inputImage.cols()) = inputImage;
 	ArrayXXf mask;
 	if (maskType == MASK_TYPE::NVF)
 		mask = computeCustomMask(inputImage, padded);
-	else 
+	else
 	{
 		ArrayXXf errorSequence;
 		VectorXf coefficients;
@@ -82,13 +101,7 @@ EigenArrayRGB Watermark::makeWatermark(const ArrayXXf& inputImage, const EigenAr
 	}
 	const ArrayXXf u = mask * randomMatrix;
 	watermarkStrength = strengthFactor / sqrt(u.square().sum() / (rows * cols));
-	const ArrayXXf uStrength = u * watermarkStrength;
-	
-	EigenArrayRGB watermarkedImage;
-#pragma omp parallel for
-	for (int channel = 0; channel < 3; channel++)
-		watermarkedImage[channel] = (outputImage[channel] + uStrength).cwiseMax(0).cwiseMin(255);
-	return watermarkedImage;
+	return u * watermarkStrength;
 }
 
 //compute Prediction error mask
