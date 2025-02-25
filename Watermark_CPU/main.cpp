@@ -39,6 +39,16 @@ using AVFramePtr = std::unique_ptr<AVFrame, std::function<void(AVFrame*)>>;
 using AVCodecContextPtr = std::unique_ptr<AVCodecContext, std::function<void(AVCodecContext*)>>;
 using FILEPtr = std::unique_ptr<FILE, decltype(&_pclose)>;
 
+//helper lambda function that displays an error message and exits the program if an error condition is true
+auto checkError = [](auto criticalErrorCondition, const std::string& errorMessage)
+{
+	if (criticalErrorCondition)
+	{
+		std::cout << errorMessage << "\n";
+		exitProgram(EXIT_FAILURE);
+	}
+};
+
 /*!
  *  \brief  This is a project implementation of my Thesis with title:
  *			EFFICIENT IMPLEMENTATION OF WATERMARKING ALGORITHMS AND
@@ -48,11 +58,8 @@ using FILEPtr = std::unique_ptr<FILE, decltype(&_pclose)>;
 int main(int argc, char** argv)
 {
 	const INIReader inir("settings.ini");
-	if (inir.ParseError() < 0) 
-	{
-		cout << "Could not load configuration file, exiting..";
-		exitProgram(EXIT_FAILURE);
-	}
+	checkError(inir.ParseError() < 0, "Could not load settings.ini file");
+
 	// load parameters
 	const int p = inir.GetInteger("parameters", "p", -1);
 	const float psnr = inir.GetFloat("parameters", "psnr", -1.0f);
@@ -69,19 +76,10 @@ int main(int argc, char** argv)
 	for (int i = 0; i < 24; i++) {}
 
 	//check valid parameter values
-	if (p <= 1 || p % 2 != 1 || p > 9) 
-	{
-		cout << "p parameter must be a positive odd number greater than or equal to 3 and less than or equal to 9\n";
-		exitProgram(EXIT_FAILURE);
-	}
-	if (psnr <= 0) 
-	{
-		cout << "PSNR must be a positive number\n";
-		exitProgram(EXIT_FAILURE);
-	}
+	checkError(p <= 1 || p % 2 != 1 || p > 9, "p parameter must be a positive odd number greater than or equal to 3 and less than or equal to 9");
+	checkError(psnr <= 0, "PSNR must be a positive number");
 
 	cout << "Using " << numThreads << " parallel threads.\n";
-
 	//test algorithms
 	try {
 		const string videoFile = inir.Get("paths", "video", "");
@@ -121,11 +119,9 @@ int testForImage(const INIReader& inir, const int p, const float psnr)
 	const ArrayXXf arrayGrayscale = eigen3dArrayToGrayscaleArray(arrayRgb, R_WEIGHT, G_WEIGHT, B_WEIGHT);
 	timer::end();
 	cout << "Time to load image from disk and initialize CImg and Eigen memory objects: " << secs + timer::elapsedSeconds() << " seconds\n\n";
-	if (cols <= 16 || rows <= 16 || rows >= 16384 || cols >= 16384)
-	{
-		cout << "Image dimensions too low or too high\n";
-		exitProgram(EXIT_FAILURE);
-	}
+
+	checkError(cols <= 16 || rows <= 16 || rows >= 16384 || cols >= 16384, "Image dimensions too low or too high");
+	
 	//initialize main class responsible for watermarking and detection
 	Watermark watermarkObj(rows, cols, inir.Get("paths", "watermark", "w.txt"), p, psnr);
 	float watermarkStrength;
@@ -209,21 +205,13 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 
 	//Load input video
 	AVFormatContext* inputFormatCtx = nullptr;
-	if (avformat_open_input(&inputFormatCtx, videoFile.c_str(), nullptr, nullptr) < 0)
-	{
-		std::cout << "ERROR: Failed to open input video file\n";
-		exitProgram(EXIT_FAILURE);
-	}
+	checkError(avformat_open_input(&inputFormatCtx, videoFile.c_str(), nullptr, nullptr) < 0, "ERROR: Failed to open input video file");
 	avformat_find_stream_info(inputFormatCtx, nullptr);
 	av_dump_format(inputFormatCtx, 0, videoFile.c_str(), 0);
 
 	//Find video stream and open video decoder
 	const int videoStreamIndex = findVideoStreamIndex(inputFormatCtx);
-	if (videoStreamIndex == -1)
-	{
-		std::cout << "ERROR: No video stream found\n";
-		exitProgram(EXIT_FAILURE);
-	}
+	checkError(videoStreamIndex == -1, "ERROR: No video stream found");
 	const AVCodecContextPtr inputDecoderCtx(openDecoderContext(inputFormatCtx->streams[videoStreamIndex]->codecpar), [](AVCodecContext* ctx) { avcodec_free_context(&ctx); });
 
 	//initialize watermark functions class
@@ -231,12 +219,16 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 	const int width = inputFormatCtx->streams[videoStreamIndex]->codecpar->width;
 	Watermark watermarkObj(height, width, inir.Get("paths", "watermark", ""), p, psnr);
 
+	//initialize necessary FFmpeg structures (packet, frame)
+	const AVPacketPtr packet(av_packet_alloc(), [](AVPacket* pkt) { av_packet_free(&pkt); });
+	const AVFramePtr frame(av_frame_alloc(), [](AVFrame* frame) { av_frame_free(&frame); });
+	std::unique_ptr<uint8_t> inputFramePtr(new uint8_t[width * height]);
+
 	//realtime watermarking of raw video
 	const string makeWatermarkVideoPath = inir.Get("parameters_video", "encode_watermark_file_path", "");
 	if (makeWatermarkVideoPath != "")
 	{
 		const string ffmpegOptions = inir.Get("parameters_video", "encode_options", "-c:v libx265 -preset fast -crf 23");
-
 		// Build the FFmpeg command
 		std::ostringstream ffmpegCmd;
 		ffmpegCmd << "ffmpeg -y -f rawvideo -pix_fmt yuv420p " << "-s " << width << "x" << height
@@ -245,22 +237,15 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 
 		// Open FFmpeg process
 		FILEPtr ffmpegPipe(_popen(ffmpegCmd.str().c_str(), "wb"), _pclose);
-		if (!ffmpegPipe.get())
-		{
-			std::cout << "Error: Could not open FFmpeg pipe\n";
-			exitProgram(EXIT_FAILURE);
-		}
+		checkError(!ffmpegPipe.get(), "Error: Could not open FFmpeg pipe");
 
 		timer::start();
-		//read frames
-		float watermarkStrength;
-		std::unique_ptr<uint8_t> inputFramePtr(new uint8_t[width * height]);
 		ArrayXXf inputFrame;
 		Array<uint8_t, Dynamic, Dynamic> watermarkedFrame;
-		const AVPacketPtr packet(av_packet_alloc(), [](AVPacket* pkt) { av_packet_free(&pkt); });
-		const AVFramePtr frame(av_frame_alloc(), [](AVFrame* frame) { av_frame_free(&frame); });
+		float watermarkStrength;
 		int framesCount = 0;
 
+		//start reading video frames loop
 		while (av_read_frame(inputFormatCtx, packet.get()) >= 0)
 		{
 			if (!receivedValidVideoFrame(inputDecoderCtx.get(), packet.get(), frame.get(), videoStreamIndex))
@@ -307,21 +292,17 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 		}
 		timer::end();
 		cout << "\nWatermark embeding total execution time: " << executionTime(false, timer::elapsedSeconds()) << "\n";
-
-		//clReleaseMemObject(pinnedBuff);
 	}
 
 	//realtime watermarked video detection
 	else if (inir.GetBoolean("parameters_video", "watermark_detection", false))
 	{
 		timer::start();
-		float correlation;
 		ArrayXXf inputFrame;
-		std::unique_ptr<uint8_t> inputFramePtr(new uint8_t[width * height]);
-		const AVPacketPtr packet(av_packet_alloc(), [](AVPacket* pkt) { av_packet_free(&pkt); });
-		const AVFramePtr frame(av_frame_alloc(), [](AVFrame* frame) { av_frame_free(&frame); });
+		float correlation;
 		int framesCount = 0;
 
+		//start reading video frames loop
 		while (av_read_frame(inputFormatCtx, packet.get()) >= 0)
 		{
 			if (!receivedValidVideoFrame(inputDecoderCtx.get(), packet.get(), frame.get(), videoStreamIndex))
