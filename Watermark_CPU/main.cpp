@@ -100,7 +100,7 @@ int testForImage(const INIReader& inir, const int p, const float psnr)
 	const string imagePath = inir.Get("paths", "image", "NO_IMAGE");
 	const bool showFps = inir.GetBoolean("options", "execution_time_in_fps", false);
 	int loops = inir.GetInteger("parameters", "loops_for_test", 5);
-	loops = loops <= 0 || loops > 64 ? 5 : loops;
+	loops = loops <= 0 ? 5 : loops;
 
 	//load image from disk
 	timer::start();
