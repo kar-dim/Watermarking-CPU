@@ -291,7 +291,7 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 			av_packet_unref(packet.get());
 		}
 		timer::end();
-		cout << "\nWatermark embeding total execution time: " << executionTime(false, timer::elapsedSeconds()) << "\n";
+		cout << "\nWatermark embedding total execution time: " << executionTime(false, timer::elapsedSeconds()) << "\n";
 	}
 
 	//realtime watermarked video detection
