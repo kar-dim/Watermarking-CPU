@@ -260,20 +260,25 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 					for (int y = 0; y < height; y++)
 						memcpy(inputFramePtr.get() + y * width, frame->data[0] + y * frame->linesize[0], width);
 
-					//TODO check optimizations (RowMajor for watermarkedFrame to not use transpose etc)
+					//embed the watermark and receive the watermarked eigen array
 					inputFrame = Map<Array<uint8_t, Dynamic, Dynamic>>(inputFramePtr.get(), width, height).transpose().cast<float>();
 					watermarkedFrame = watermarkObj.makeWatermark(inputFrame, inputFrame, watermarkStrength, MASK_TYPE::ME).transpose().cast<uint8_t>();
+					//write the watermarked image data
+					fwrite(watermarkedFrame.data(), 1, width * frame->height, ffmpegPipe.get());
 				}
-				//write from pinned memory directly (plus UV planes)
-				for (int y = 0; y < height; y++)
-					fwrite((embedWatermark ? watermarkedFrame.data() + y * width : frame->data[0] + y * frame->linesize[0]), 1, width, ffmpegPipe.get());
+				else 
+				{
+					//write from frame buffer row-by-row the the valid image data (and not the alignment bytes)
+					for (int y = 0; y < height; y++)
+						fwrite(frame->data[0] + y * frame->linesize[0], 1, width, ffmpegPipe.get());
+				}
+				//always write UV planes as-is
 				for (int y = 0; y < height / 2; y++)
 					fwrite(frame->data[1] + y * frame->linesize[1], 1, width / 2, ffmpegPipe.get());
 				for (int y = 0; y < height / 2; y++)
 					fwrite(frame->data[2] + y * frame->linesize[2], 1, width / 2, ffmpegPipe.get());
-
 			}
-			//else, use original pointer, no need to copy data to intermediate pinned buffer
+			//else, use original pointer, no need to copy data to intermediate buffer
 			else
 			{
 				if (embedWatermark)
