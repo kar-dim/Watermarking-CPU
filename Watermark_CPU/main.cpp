@@ -285,7 +285,7 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 					inputFrame = Map<Array<uint8_t, Dynamic, Dynamic>>(frame->data[0], width, height).transpose().cast<float>();
 					watermarkedFrame = watermarkObj.makeWatermark(inputFrame, inputFrame, watermarkStrength, MASK_TYPE::ME).transpose().cast<uint8_t>();
 				}
-				// Write modified frame to ffmpeg (pipe)
+				// Write original or modified frame to ffmpeg (pipe)
 				fwrite(embedWatermark ? watermarkedFrame.data() : frame->data[0], 1, width * frame->height, ffmpegPipe.get());
 				fwrite(frame->data[1], 1, width * frame->height / 4, ffmpegPipe.get());
 				fwrite(frame->data[2], 1, width * frame->height / 4, ffmpegPipe.get());
@@ -320,7 +320,7 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 					for (int y = 0; y < height; y++)
 						memcpy(inputFramePtr.get() + y * width, frame->data[0] + y * frame->linesize[0], width);
 				}
-				//supply the input frame to the GPU and run the detection of the watermark
+				//run the detection of the watermark
 				inputFrame = Map<Array<uint8_t, Dynamic, Dynamic>>(rowPadding ? inputFramePtr.get() : frame->data[0], width, height).transpose().cast<float>();
 				correlation = watermarkObj.detectWatermark(inputFrame, MASK_TYPE::ME);
 				cout << "Correlation for frame: " << framesCount << ": " << correlation << "\n";
