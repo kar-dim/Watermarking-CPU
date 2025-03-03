@@ -256,7 +256,6 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 			{
 				if (embedWatermark)
 				{
-					//#pragma omp parallel for //if multi-threaded encoder don't parallelize!
 					for (int y = 0; y < height; y++)
 						memcpy(inputFramePtr.get() + y * width, frame->data[0] + y * frame->linesize[0], width);
 
@@ -318,7 +317,6 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 				const bool rowPadding = frame->linesize[0] != width;
 				if (rowPadding)
 				{
-					#pragma omp parallel for
 					for (int y = 0; y < height; y++)
 						memcpy(inputFramePtr.get() + y * width, frame->data[0] + y * frame->linesize[0], width);
 				}
