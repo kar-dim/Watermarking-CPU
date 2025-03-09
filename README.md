@@ -2,7 +2,8 @@
 
 ![512](https://github.com/user-attachments/assets/02298937-2406-409b-8ed6-32d783ea8710)
 
-Code for my Diploma thesis at Information and Communication Systems Engineering (University of the Aegean, School of Engineering) with title "Efficient implementation of watermark and watermark detection algorithms for image and video using the graphics processing unit". [Link](https://hellanicus.lib.aegean.gr/handle/11610/19672)
+Code for my Diploma thesis at Information and Communication Systems Engineering (University of the Aegean, School of Engineering) with title "Efficient implementation of watermark and watermark detection algorithms for image and video using the graphics processing unit". [Link](https://hellanicus.lib.aegean.gr/handle/11610/19672).
+The original watermarking algorithms are described in this paper: [Link](https://www.icsd.aegean.gr/publication_files/637538981.pdf)
 
 
 # Overview
