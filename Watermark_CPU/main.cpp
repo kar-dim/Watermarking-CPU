@@ -5,6 +5,7 @@
 #include "Utilities.hpp"
 #include "Watermark.hpp"
 #include <CImg.h>
+#include <cstdio>
 #include <cstdint>
 #include <cstring>
 #include <Eigen/Dense>
@@ -24,6 +25,12 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavcodec/packet.h>
+#include <libavutil/frame.h>
+#include <libavutil/log.h>
+#include <libavutil/avutil.h>
+#include <libavcodec/codec.h>
+#include <libavutil/pixfmt.h>
 }
 
 #define R_WEIGHT 0.299f
