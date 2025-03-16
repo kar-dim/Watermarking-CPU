@@ -3,6 +3,7 @@
 #include "Watermark.hpp"
 #include <cstdint>
 #include <Eigen/Dense>
+#include <functional>
 #include <INIReader.h>
 #include <stdio.h>
 #include <string>
@@ -31,3 +32,4 @@ AVCodecContext* openDecoderContext(const AVCodecParameters* params);
 bool receivedValidVideoFrame(AVCodecContext* inputDecoderCtx, AVPacket* packet, AVFrame* frame, const int videoStreamIndex);
 void embedWatermarkFrame(Eigen::ArrayXXf& inputFrame, Eigen::Array<uint8_t, Eigen::Dynamic, Eigen::Dynamic> watermarkedFrame, const int height, const int width, const int watermarkInterval, int& framesCount, AVFrame* frame, uint8_t* inputFramePtr, FILE* ffmpegPipe, Watermark& watermarkObj);
 void detectFrameWatermark(Eigen::ArrayXXf& inputFrame, const int height, const int width, const int watermarkInterval, int& framesCount, AVFrame* frame, uint8_t* inputFramePtr, Watermark& watermarkObj);
+int processFrames(AVFormatContext* formatCtx, AVCodecContext* decoderCtx, const int videoStreamIndex, std::function<void(AVFrame*, int&)> processFrame);
