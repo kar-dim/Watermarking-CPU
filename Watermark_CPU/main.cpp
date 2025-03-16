@@ -249,7 +249,6 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 		timer::start();
 		ArrayXXf inputFrame;
 		Array<uint8_t, Dynamic, Dynamic> watermarkedFrame;
-		float watermarkStrength;
 		int framesCount = 0;
 
 		//start reading video frames loop
@@ -257,47 +256,15 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 		{
 			if (!receivedValidVideoFrame(inputDecoderCtx.get(), packet.get(), frame.get(), videoStreamIndex))
 				continue;
-			const bool embedWatermark = framesCount % watermarkInterval == 0;
-			//if there is row padding (for alignment), we must copy the data to a contiguous block!
-			if (frame->linesize[0] != width)
-			{
-				if (embedWatermark)
-				{
-					for (int y = 0; y < height; y++)
-						memcpy(inputFramePtr.get() + y * width, frame->data[0] + y * frame->linesize[0], width);
-
-					//embed the watermark and receive the watermarked eigen array
-					inputFrame = Map<Array<uint8_t, Dynamic, Dynamic>>(inputFramePtr.get(), width, height).transpose().cast<float>();
-					watermarkedFrame = watermarkObj.makeWatermark(inputFrame, inputFrame, watermarkStrength, MASK_TYPE::ME).transpose().cast<uint8_t>();
-					//write the watermarked image data
-					fwrite(watermarkedFrame.data(), 1, width * frame->height, ffmpegPipe.get());
-				}
-				else 
-				{
-					//write from frame buffer row-by-row the the valid image data (and not the alignment bytes)
-					for (int y = 0; y < height; y++)
-						fwrite(frame->data[0] + y * frame->linesize[0], 1, width, ffmpegPipe.get());
-				}
-				//always write UV planes as-is
-				for (int y = 0; y < height / 2; y++)
-					fwrite(frame->data[1] + y * frame->linesize[1], 1, width / 2, ffmpegPipe.get());
-				for (int y = 0; y < height / 2; y++)
-					fwrite(frame->data[2] + y * frame->linesize[2], 1, width / 2, ffmpegPipe.get());
-			}
-			//else, use original pointer, no need to copy data to intermediate buffer
-			else
-			{
-				if (embedWatermark)
-				{
-					inputFrame = Map<Array<uint8_t, Dynamic, Dynamic>>(frame->data[0], width, height).transpose().cast<float>();
-					watermarkedFrame = watermarkObj.makeWatermark(inputFrame, inputFrame, watermarkStrength, MASK_TYPE::ME).transpose().cast<uint8_t>();
-				}
-				// Write original or modified frame to ffmpeg (pipe)
-				fwrite(embedWatermark ? watermarkedFrame.data() : frame->data[0], 1, width * frame->height, ffmpegPipe.get());
-				fwrite(frame->data[1], 1, width * frame->height / 4, ffmpegPipe.get());
-				fwrite(frame->data[2], 1, width * frame->height / 4, ffmpegPipe.get());
-			}
-			framesCount++;
+			embedWatermarkFrame(inputFrame, watermarkedFrame, height, width, watermarkInterval, framesCount, frame.get(), inputFramePtr.get(), ffmpegPipe.get(), watermarkObj);
+		}
+		// Ensure all remaining frames are flushed
+		avcodec_send_packet(inputDecoderCtx.get(), nullptr);
+		while (avcodec_receive_frame(inputDecoderCtx.get(), frame.get()) == 0)
+		{
+			if (frame->format == inputDecoderCtx->pix_fmt)
+				//embed watermark after X frames
+				embedWatermarkFrame(inputFrame, watermarkedFrame, height, width, watermarkInterval, framesCount, frame.get(), inputFramePtr.get(), ffmpegPipe.get(), watermarkObj);
 		}
 		timer::end();
 		cout << "\nWatermark embedding total execution time: " << executionTime(false, timer::elapsedSeconds()) << "\n";
@@ -308,7 +275,6 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 	{
 		timer::start();
 		ArrayXXf inputFrame;
-		float correlation;
 		int framesCount = 0;
 
 		//start reading video frames loop
@@ -316,23 +282,16 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 		{
 			if (!receivedValidVideoFrame(inputDecoderCtx.get(), packet.get(), frame.get(), videoStreamIndex))
 				continue;
-
 			//detect watermark after X frames
-			if (framesCount % watermarkInterval == 0)
-			{
-				//if there is row padding (for alignment), we must copy the data to a contiguous block!
-				const bool rowPadding = frame->linesize[0] != width;
-				if (rowPadding)
-				{
-					for (int y = 0; y < height; y++)
-						memcpy(inputFramePtr.get() + y * width, frame->data[0] + y * frame->linesize[0], width);
-				}
-				//run the detection of the watermark
-				inputFrame = Map<Array<uint8_t, Dynamic, Dynamic>>(rowPadding ? inputFramePtr.get() : frame->data[0], width, height).transpose().cast<float>();
-				correlation = watermarkObj.detectWatermark(inputFrame, MASK_TYPE::ME);
-				cout << "Correlation for frame: " << framesCount << ": " << correlation << "\n";
-			}
-			framesCount++;
+			detectFrameWatermark(inputFrame, height, width, watermarkInterval, framesCount, frame.get(), inputFramePtr.get(), watermarkObj);
+		}
+		// Ensure all remaining frames are flushed
+		avcodec_send_packet(inputDecoderCtx.get(), nullptr);
+		while (avcodec_receive_frame(inputDecoderCtx.get(), frame.get()) == 0)
+		{
+			if (frame->format == inputDecoderCtx->pix_fmt)
+				//detect watermark after X frames
+				detectFrameWatermark(inputFrame, height, width, watermarkInterval, framesCount, frame.get(), inputFramePtr.get(), watermarkObj);
 		}
 		timer::end();
 		cout << "\nWatermark detection total execution time: " << executionTime(false, timer::elapsedSeconds()) << "\n";
@@ -342,6 +301,73 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 	// Cleanup
 	avformat_close_input(&inputFormatCtx);
 	return EXIT_SUCCESS;
+}
+
+void embedWatermarkFrame(ArrayXXf& inputFrame, Array<uint8_t, Dynamic, Dynamic> watermarkedFrame, const int height, const int width, const int watermarkInterval, int& framesCount, AVFrame* frame, uint8_t* inputFramePtr, FILE* ffmpegPipe, Watermark& watermarkObj)
+{
+	float watermarkStrength;
+	const bool embedWatermark = framesCount % watermarkInterval == 0;
+	//if there is row padding (for alignment), we must copy the data to a contiguous block!
+	if (frame->linesize[0] != width)
+	{
+		if (embedWatermark)
+		{
+			for (int y = 0; y < height; y++)
+				memcpy(inputFramePtr + y * width, frame->data[0] + y * frame->linesize[0], width);
+
+			//embed the watermark and receive the watermarked eigen array
+			inputFrame = Map<Array<uint8_t, Dynamic, Dynamic>>(inputFramePtr, width, height).transpose().cast<float>();
+			watermarkedFrame = watermarkObj.makeWatermark(inputFrame, inputFrame, watermarkStrength, MASK_TYPE::ME).transpose().cast<uint8_t>();
+			//write the watermarked image data
+			fwrite(watermarkedFrame.data(), 1, width * frame->height, ffmpegPipe);
+		}
+		else
+		{
+			//write from frame buffer row-by-row the the valid image data (and not the alignment bytes)
+			for (int y = 0; y < height; y++)
+				fwrite(frame->data[0] + y * frame->linesize[0], 1, width, ffmpegPipe);
+		}
+		//always write UV planes as-is
+		for (int y = 0; y < height / 2; y++)
+			fwrite(frame->data[1] + y * frame->linesize[1], 1, width / 2, ffmpegPipe);
+		for (int y = 0; y < height / 2; y++)
+			fwrite(frame->data[2] + y * frame->linesize[2], 1, width / 2, ffmpegPipe);
+	}
+	//else, use original pointer, no need to copy data to intermediate buffer
+	else
+	{
+		if (embedWatermark)
+		{
+			inputFrame = Map<Array<uint8_t, Dynamic, Dynamic>>(frame->data[0], width, height).transpose().cast<float>();
+			watermarkedFrame = watermarkObj.makeWatermark(inputFrame, inputFrame, watermarkStrength, MASK_TYPE::ME).transpose().cast<uint8_t>();
+		}
+		// Write original or modified frame to ffmpeg (pipe)
+		fwrite(embedWatermark ? watermarkedFrame.data() : frame->data[0], 1, width * frame->height, ffmpegPipe);
+		fwrite(frame->data[1], 1, width * frame->height / 4, ffmpegPipe);
+		fwrite(frame->data[2], 1, width * frame->height / 4, ffmpegPipe);
+	}
+	framesCount++;
+}
+
+void detectFrameWatermark(Eigen::ArrayXXf& inputFrame, const int height, const int width, const int watermarkInterval, int& framesCount, AVFrame* frame, uint8_t* inputFramePtr, Watermark& watermarkObj)
+{
+	float correlation;
+	//detect watermark after X frames
+	if (framesCount % watermarkInterval == 0)
+	{
+		//if there is row padding (for alignment), we must copy the data to a contiguous block!
+		const bool rowPadding = frame->linesize[0] != width;
+		if (rowPadding)
+		{
+			for (int y = 0; y < height; y++)
+				memcpy(inputFramePtr + y * width, frame->data[0] + y * frame->linesize[0], width);
+		}
+		//run the detection of the watermark
+		inputFrame = Map<Array<uint8_t, Dynamic, Dynamic>>(rowPadding ? inputFramePtr : frame->data[0], width, height).transpose().cast<float>();
+		correlation = watermarkObj.detectWatermark(inputFrame, MASK_TYPE::ME);
+		cout << "Correlation for frame: " << framesCount << ": " << correlation << "\n";
+	}
+	framesCount++;
 }
 
 // find the first video stream index
@@ -359,6 +385,14 @@ AVCodecContext* openDecoderContext(const AVCodecParameters* inputCodecParams)
 	const AVCodec* inputDecoder = avcodec_find_decoder(inputCodecParams->codec_id);
 	AVCodecContext* inputDecoderCtx = avcodec_alloc_context3(inputDecoder);
 	avcodec_parameters_to_context(inputDecoderCtx, inputCodecParams);
+	//multithreading decode
+	inputDecoderCtx->thread_count = 0;
+	if (inputDecoder->capabilities & AV_CODEC_CAP_FRAME_THREADS)
+		inputDecoderCtx->thread_type = FF_THREAD_FRAME;
+	else if (inputDecoder->capabilities & AV_CODEC_CAP_SLICE_THREADS)
+		inputDecoderCtx->thread_type = FF_THREAD_SLICE;
+	else
+		inputDecoderCtx->thread_count = 1; //don't use multithreading
 	avcodec_open2(inputDecoderCtx, inputDecoder, nullptr);
 	return inputDecoderCtx;
 }

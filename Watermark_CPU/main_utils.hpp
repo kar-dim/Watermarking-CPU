@@ -1,6 +1,10 @@
 #pragma once
 #include "eigen_rgb_array.hpp"
+#include "Watermark.hpp"
+#include <cstdint>
+#include <Eigen/Dense>
 #include <INIReader.h>
+#include <stdio.h>
 #include <string>
 
 extern "C" {
@@ -25,3 +29,5 @@ int testForVideo(const std::string& videoFile, const INIReader& inir, const int 
 int findVideoStreamIndex(const AVFormatContext* inputFormatCtx);
 AVCodecContext* openDecoderContext(const AVCodecParameters* params);
 bool receivedValidVideoFrame(AVCodecContext* inputDecoderCtx, AVPacket* packet, AVFrame* frame, const int videoStreamIndex);
+void embedWatermarkFrame(Eigen::ArrayXXf& inputFrame, Eigen::Array<uint8_t, Eigen::Dynamic, Eigen::Dynamic> watermarkedFrame, const int height, const int width, const int watermarkInterval, int& framesCount, AVFrame* frame, uint8_t* inputFramePtr, FILE* ffmpegPipe, Watermark& watermarkObj);
+void detectFrameWatermark(Eigen::ArrayXXf& inputFrame, const int height, const int width, const int watermarkInterval, int& framesCount, AVFrame* frame, uint8_t* inputFramePtr, Watermark& watermarkObj);
