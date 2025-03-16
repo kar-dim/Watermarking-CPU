@@ -264,7 +264,7 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 		timer::start();
 		ArrayXXf inputFrame;
 		//detect watermark on the video frames
-		int framesCount = processFrames(inputFormatCtx, inputDecoderCtx.get(), videoStreamIndex,
+		const int framesCount = processFrames(inputFormatCtx, inputDecoderCtx.get(), videoStreamIndex,
 			[&](AVFrame* frame, int& framesCount) { detectFrameWatermark(inputFrame, height, width, watermarkInterval, framesCount, frame, inputFramePtr.get(), watermarkObj); });
 		timer::end();
 
