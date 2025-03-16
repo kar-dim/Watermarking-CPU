@@ -303,6 +303,7 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 	return EXIT_SUCCESS;
 }
 
+// Embed watermark in a video frame
 void embedWatermarkFrame(ArrayXXf& inputFrame, Array<uint8_t, Dynamic, Dynamic> watermarkedFrame, const int height, const int width, const int watermarkInterval, int& framesCount, AVFrame* frame, uint8_t* inputFramePtr, FILE* ffmpegPipe, Watermark& watermarkObj)
 {
 	float watermarkStrength;
@@ -349,6 +350,7 @@ void embedWatermarkFrame(ArrayXXf& inputFrame, Array<uint8_t, Dynamic, Dynamic> 
 	framesCount++;
 }
 
+// Detect the watermark for a video frame
 void detectFrameWatermark(Eigen::ArrayXXf& inputFrame, const int height, const int width, const int watermarkInterval, int& framesCount, AVFrame* frame, uint8_t* inputFramePtr, Watermark& watermarkObj)
 {
 	float correlation;
