@@ -24,6 +24,9 @@
     <ClCompile Include="Watermark.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="videoprocessingcontext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utilities.hpp">
@@ -36,6 +39,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="eigen_rgb_array.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="videoprocessingcontext.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
