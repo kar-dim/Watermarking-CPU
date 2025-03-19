@@ -1,12 +1,11 @@
 #pragma once
 #include "eigen_rgb_array.hpp"
 #include "videoprocessingcontext.hpp"
-#include "Watermark.hpp"
 #include <cstdint>
+#include <cstdio>
 #include <Eigen/Dense>
 #include <functional>
 #include <INIReader.h>
-#include <stdio.h>
 #include <string>
 
 extern "C" {
