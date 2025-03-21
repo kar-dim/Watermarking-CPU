@@ -234,7 +234,7 @@ int testForVideo(const string& videoFile, const INIReader& inir, const int p, co
 	std::unique_ptr<uint8_t> inputFramePtr(new uint8_t[width * height]);
 
 	//group common video data for both embedding and detection
-	VideoProcessingContext videoData(inputFormatCtx.get(), inputDecoderCtx.get(), videoStreamIndex, &watermarkObj, height, width, watermarkInterval, inputFramePtr.get());
+	const VideoProcessingContext videoData(inputFormatCtx.get(), inputDecoderCtx.get(), videoStreamIndex, &watermarkObj, height, width, watermarkInterval, inputFramePtr.get());
 
 	//realtime watermarking of raw video
 	const string makeWatermarkVideoPath = inir.Get("parameters_video", "encode_watermark_file_path", "");
