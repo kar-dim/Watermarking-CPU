@@ -1,10 +1,11 @@
 #pragma once
 #include "eigen_rgb_array.hpp"
-#include "Watermark.hpp"
+#include "videoprocessingcontext.hpp"
 #include <cstdint>
+#include <cstdio>
 #include <Eigen/Dense>
+#include <functional>
 #include <INIReader.h>
-#include <stdio.h>
 #include <string>
 
 extern "C" {
@@ -29,5 +30,7 @@ int testForVideo(const std::string& videoFile, const INIReader& inir, const int 
 int findVideoStreamIndex(const AVFormatContext* inputFormatCtx);
 AVCodecContext* openDecoderContext(const AVCodecParameters* params);
 bool receivedValidVideoFrame(AVCodecContext* inputDecoderCtx, AVPacket* packet, AVFrame* frame, const int videoStreamIndex);
-void embedWatermarkFrame(Eigen::ArrayXXf& inputFrame, Eigen::Array<uint8_t, Eigen::Dynamic, Eigen::Dynamic> watermarkedFrame, const int height, const int width, const int watermarkInterval, int& framesCount, AVFrame* frame, uint8_t* inputFramePtr, FILE* ffmpegPipe, Watermark& watermarkObj);
-void detectFrameWatermark(Eigen::ArrayXXf& inputFrame, const int height, const int width, const int watermarkInterval, int& framesCount, AVFrame* frame, uint8_t* inputFramePtr, Watermark& watermarkObj);
+std::string getVideoFrameRate(const AVFormatContext* inputFormatCtx, const int videoStreamIndex);
+void embedWatermarkFrame(const VideoProcessingContext& data, Eigen::ArrayXXf& inputFrame, Eigen::Array<uint8_t, Eigen::Dynamic, Eigen::Dynamic>& watermarkedFrame, int& framesCount, AVFrame* frame, FILE* ffmpegPipe);
+void detectFrameWatermark(const VideoProcessingContext& data, Eigen::ArrayXXf& inputFrame, int& framesCount, AVFrame* frame);
+int processFrames(const VideoProcessingContext& data, std::function<void(AVFrame*, int&)> processFrame);
