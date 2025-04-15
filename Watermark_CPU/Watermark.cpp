@@ -16,8 +16,8 @@ using namespace Eigen;
 using std::string;
 
 //constructor to initialize all the necessary data
-Watermark::Watermark(const Eigen::Index rows, const Eigen::Index cols, const string wFilePath, const int p, const float psnr) : 
-	randomMatrix(loadRandomMatrix(wFilePath, rows, cols)), p(p), pSquared(p * p), halfNeighborsSize((pSquared - 1) / 2),
+Watermark::Watermark(const Eigen::Index rows, const Eigen::Index cols, const string& randomMatrixPath, const int p, const float psnr) :
+	randomMatrix(loadRandomMatrix(randomMatrixPath, rows, cols)), p(p), pSquared(p * p), halfNeighborsSize((pSquared - 1) / 2),
 	pad(p / 2), rows(rows), cols(cols), paddedRows(rows + 2 * pad), paddedCols(cols + 2 * pad), padded(ArrayXXf::Zero(paddedRows, paddedCols)), strengthFactor((255.0f / sqrt(pow(10.0f, psnr / 10.0f))))
 { }
 
