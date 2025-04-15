@@ -19,7 +19,7 @@ private:
 	float strengthFactor;
 
 	void createNeighbors(const Eigen::ArrayXXf& array, Eigen::VectorXf& x_, const int neighborSize, const int i, const int j) const;
-	Eigen::ArrayXXf loadRandomMatrix(const std::string wFilePath, const Eigen::Index rows, const Eigen::Index cols) const;
+	Eigen::ArrayXXf loadRandomMatrix(const std::string& randomMatrixPath, const Eigen::Index rows, const Eigen::Index cols) const;
 	Eigen::ArrayXXf computeCustomMask(const Eigen::ArrayXXf& image, const Eigen::ArrayXXf& padded) const;
 	Eigen::ArrayXXf computePredictionErrorMask(const Eigen::ArrayXXf& paddedImage, Eigen::ArrayXXf& errorSequence, Eigen::VectorXf& coefficients, const bool maskNeeded) const;
 	Eigen::ArrayXXf computeErrorSequence(const Eigen::ArrayXXf& padded, const Eigen::VectorXf& coefficients) const;

@@ -22,11 +22,11 @@ Watermark::Watermark(const Eigen::Index rows, const Eigen::Index cols, const str
 { }
 
 //helper method to load the random noise matrix W from the file specified.
-ArrayXXf Watermark::loadRandomMatrix(const string wFilePath, const Index rows, const Index cols) const 
+ArrayXXf Watermark::loadRandomMatrix(const string& randomMatrixPath, const Index rows, const Index cols) const
 {
-	std::ifstream randomMatrixStream(wFilePath.c_str(), std::ios::binary);
+	std::ifstream randomMatrixStream(randomMatrixPath.c_str(), std::ios::binary);
 	if (!randomMatrixStream.is_open())
-		throw std::runtime_error(string("Error opening '" + wFilePath + "' file for Random noise W array\n"));
+		throw std::runtime_error(string("Error opening '" + randomMatrixPath + "' file for Random noise W array\n"));
 	randomMatrixStream.seekg(0, std::ios::end);
 	const auto totalBytes = randomMatrixStream.tellg();
 	randomMatrixStream.seekg(0, std::ios::beg);
